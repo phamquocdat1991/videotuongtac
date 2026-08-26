@@ -1,0 +1,6 @@
+{
+  "name": "AI Interactive Video Creator",
+  "description": "Công cụ tạo Video Tương tác bằng AI dành cho giáo viên với xuất file HTML tương tác độc lập.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
