@@ -156,7 +156,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
       const letter = String.fromCharCode(65 + q.correctAnswer);
       return (
         <div className="flex flex-col gap-0.5">
-          <span className="text-emerald-400 font-semibold text-xs flex items-center gap-1">
+          <span className="text-emerald-700 font-semibold text-xs flex items-center gap-1">
             <CheckCircle className="w-3.5 h-3.5 inline flex-shrink-0" />
             <span>Đáp án {letter}: <MathRenderer content={correctText} inline /></span>
           </span>
@@ -172,7 +172,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
       const letters = (mc.correctAnswers || []).map((i) => String.fromCharCode(65 + i)).join(', ');
       return (
         <div className="flex flex-col gap-0.5">
-          <span className="text-indigo-400 font-semibold text-xs flex items-center gap-1">
+          <span className="text-indigo-700 font-semibold text-xs flex items-center gap-1">
             <CheckSquare className="w-3.5 h-3.5 inline flex-shrink-0" />
             <span>Các đáp án đúng: [{letters}]</span>
           </span>
@@ -187,7 +187,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
       const tf = data as TrueFalseInteraction;
       return (
         <div className="flex flex-col gap-0.5 text-xs">
-          <span className={tf.isCorrect ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+          <span className={tf.isCorrect ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
             Khẳng định này: {tf.isCorrect ? '✓ ĐÚNG' : '✗ SAI'}
           </span>
           {tf.explanation && (
@@ -201,7 +201,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
       const dd = data as DragDropInteraction;
       return (
         <div className="flex flex-col gap-0.5 text-xs text-slate-300">
-          <span className="text-violet-300 font-medium">
+          <span className="text-violet-700 font-medium">
             {dd.categories.length} nhóm &bull; {dd.items.length} thẻ phân loại
           </span>
           <span className="text-[11px] text-slate-400 line-clamp-1">
@@ -213,7 +213,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
       const fb = data as FillBlankInteraction;
       return (
         <div className="flex flex-col gap-0.5 text-xs">
-          <span className="text-amber-300 font-semibold">
+          <span className="text-amber-700 font-semibold">
             Điền: "<MathRenderer content={fb.blankAnswer} inline />"
           </span>
           {fb.hint && (
@@ -226,7 +226,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
     } else if (data.type === 'checkpoint_note') {
       const cn = data as CheckpointNoteInteraction;
       return (
-        <div className="flex flex-col gap-0.5 text-xs text-indigo-300">
+        <div className="flex flex-col gap-0.5 text-xs text-indigo-700">
           <span className="font-semibold">Thẻ tóm tắt trọng tâm</span>
           <span className="text-[11px] text-slate-400 line-clamp-1">
             {cn.keyTakeaways?.join('; ')}
@@ -242,42 +242,42 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
     switch (type) {
       case 'quiz':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-700 border border-indigo-500/30">
             <HelpCircle className="w-3.5 h-3.5" />
             <span>Trắc nghiệm đơn</span>
           </span>
         );
       case 'multi_choice':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/15 text-blue-700 border border-blue-500/30">
             <CheckSquare className="w-3.5 h-3.5" />
             <span>Đa đáp án</span>
           </span>
         );
       case 'true_false':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500/15 text-teal-400 border border-teal-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-500/15 text-teal-700 border border-teal-500/30">
             <CheckCircle className="w-3.5 h-3.5" />
             <span>Đúng / Sai</span>
           </span>
         );
       case 'drag_drop':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-500/15 text-violet-400 border border-violet-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-500/15 text-violet-700 border border-violet-500/30">
             <MoveHorizontal className="w-3.5 h-3.5" />
             <span>Kéo thả thẻ</span>
           </span>
         );
       case 'fill_blank':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/15 text-amber-700 border border-amber-500/30">
             <Edit2 className="w-3.5 h-3.5" />
             <span>Điền từ</span>
           </span>
         );
       case 'checkpoint_note':
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-700 border border-emerald-500/30">
             <BookOpen className="w-3.5 h-3.5" />
             <span>Thẻ tóm tắt</span>
           </span>
@@ -308,7 +308,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
     <section aria-labelledby="script-panel-title" className="academic-panel academic-script flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
+      <div className="flex flex-col items-start justify-between gap-3 border-b border-slate-800 pb-3.5">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-violet-500/10 text-violet-400 border border-violet-500/20">
             <Layers className="w-5 h-5" />
@@ -329,7 +329,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
           <button
             type="button"
             onClick={onReview}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${isReviewed ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'}`}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${isReviewed ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'}`}
           >
             {isReviewed ? <ShieldCheck className="w-4 h-4" /> : <ClipboardCheck className="w-4 h-4" />}
             <span>{isReviewed ? 'Đã rà soát' : 'Rà soát'}</span>
@@ -339,7 +339,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
             type="button"
             onClick={exportCsv}
             disabled={interactions.length === 0}
-            className="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-emerald-300 hover:text-emerald-200 px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition-all"
+            className="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-emerald-700 hover:text-emerald-800 px-3 py-2 rounded-xl text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition-all"
             title="Xuất danh sách mốc tương tác ra file CSV"
           >
             <FileSpreadsheet className="w-4 h-4" />
@@ -372,125 +372,40 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
           {Object.entries(typeCoverage).map(([type, count]) => <span key={type} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1">{getTypeLabelForMatrix(type)}: <strong className="text-slate-200">{count}</strong></span>)}
           {interactions.length === 0 && <span>Chưa có dữ liệu</span>}
         </div>
-        <span className={`text-[10px] font-semibold ${objectiveCoverage === interactions.length && interactions.length ? 'text-emerald-300' : 'text-slate-500'}`}>Mục tiêu học tập: {objectiveCoverage}/{interactions.length}</span>
+        <span className={`text-[10px] font-semibold ${objectiveCoverage === interactions.length && interactions.length ? 'text-emerald-700' : 'text-slate-500'}`}>Mục tiêu học tập: {objectiveCoverage}/{interactions.length}</span>
       </div>
 
-      {/* Table Container */}
-      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800 text-[11px]">
-            <tr>
-              <th className="py-3 px-3.5 w-12 text-center">STT</th>
-              <th className="py-3 px-3 w-28">Mốc Dừng</th>
-              <th className="py-3 px-3.5 w-36">Loại Tương Tác</th>
-              <th className="py-3 px-4 min-w-[220px]">Nội Dung Câu Hỏi / Yêu Cầu</th>
-              <th className="py-3 px-4 min-w-[200px]">Đáp Án &amp; Giải Thích</th>
-              <th className="py-3 px-3 w-32 text-center">Hành Động</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/80 font-normal">
-            {interactions.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-10 text-slate-500">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Sparkles className="w-8 h-8 text-slate-600" />
-                    <p className="text-sm font-medium text-slate-400">Chưa có kịch bản tương tác nào</p>
-                    <p className="text-xs text-slate-500 max-w-sm">
-                      Nhấp nút <strong className="text-indigo-400">"Phân tích bằng AI"</strong> ở cột bên trái hoặc bấm <strong className="text-slate-300">"Thêm Điểm Dừng"</strong> để tạo câu hỏi.
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              interactions.map((point, index) => (
-                <tr key={point.id} className="hover:bg-slate-800/40 transition-colors group">
-                  
-                  {/* Index */}
-                  <td className="py-3 px-3.5 text-center font-bold text-slate-400">
-                    {index + 1}
-                  </td>
-
-                  {/* Timestamp */}
-                  <td className="py-3 px-3">
-                    <button
-                      type="button"
-                      onClick={() => onSeekToTimestamp(point.timestamp)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-indigo-900/50 text-indigo-300 border border-slate-700 hover:border-indigo-500/50 font-mono font-bold transition-all text-xs group/btn"
-                      title="Nhấp để nhảy video tới mốc này"
-                    >
-                      <Clock className="w-3.5 h-3.5 text-indigo-400 group-hover/btn:scale-110" />
-                      <span>{formatSeconds(point.timestamp)}</span>
-                    </button>
-                  </td>
-
-                  {/* Interaction Type */}
-                  <td className="py-3 px-3.5">
-                    {getTypeBadge(point.data.type)}
-                  </td>
-
-                  {/* Content / Question */}
-                  <td className="py-3 px-4">
-                    <div className="font-semibold text-white mb-0.5 line-clamp-2">
-                      <MathRenderer content={getContentDisplay(point)} inline />
-                    </div>
-                    {point.title && (
-                      <span className="text-[11px] text-slate-400 italic">
-                        Tiêu đề: {point.title}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* Answer Summary */}
-                  <td className="py-3 px-4">
-                    {getAnswerSummary(point)}
-                  </td>
-
-                  {/* Actions */}
-                  <td className="py-3 px-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onSeekToTimestamp(point.timestamp)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-slate-800 transition-colors"
-                        title="Xem trước tại mốc này"
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onEditInteraction(point)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-slate-800 transition-colors"
-                        title="Chỉnh sửa câu hỏi"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDuplicateInteraction(point)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
-                        title="Nhân bản điểm dừng này"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDeleteInteraction(point.id)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
-                        title="Xóa mốc tương tác"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* Inspector list: phù hợp với cột biên tập của Academic Workspace. */}
+      <div className="space-y-3">
+        {interactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+            <Sparkles className="h-8 w-8 text-slate-400" />
+            <p className="text-sm font-semibold text-slate-700">Chưa có kịch bản tương tác</p>
+            <p className="max-w-sm text-xs text-slate-500">Dùng “Phân tích bằng AI” hoặc chọn “Thêm Điểm Dừng” để bắt đầu.</p>
+          </div>
+        ) : interactions.map((point, index) => (
+          <article key={point.id} className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition hover:border-blue-200 hover:shadow-[0_12px_30px_rgba(37,99,235,0.08)]">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="grid h-7 w-7 place-items-center rounded-lg bg-slate-100 text-[11px] font-extrabold text-slate-500">{index + 1}</span>
+                <button type="button" onClick={() => onSeekToTimestamp(point.timestamp)} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 font-mono text-xs font-bold text-indigo-700 transition hover:border-indigo-300 hover:bg-indigo-100" title="Nhấp để nhảy video tới mốc này"><Clock className="h-3.5 w-3.5" /><span>{formatSeconds(point.timestamp)}</span></button>
+                {getTypeBadge(point.data.type)}
+              </div>
+              <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button type="button" onClick={() => onSeekToTimestamp(point.timestamp)} className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-indigo-600" title="Xem trước tại mốc này" aria-label={`Xem trước mốc ${index + 1}`}><Play className="h-4 w-4" /></button>
+                <button type="button" onClick={() => onEditInteraction(point)} className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-amber-600" title="Chỉnh sửa câu hỏi" aria-label={`Chỉnh sửa mốc ${index + 1}`}><Edit2 className="h-4 w-4" /></button>
+                <button type="button" onClick={() => onDuplicateInteraction(point)} className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-cyan-700" title="Nhân bản điểm dừng này" aria-label={`Nhân bản mốc ${index + 1}`}><Copy className="h-4 w-4" /></button>
+                <button type="button" onClick={() => onDeleteInteraction(point.id)} className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-rose-600" title="Xóa mốc tương tác" aria-label={`Xóa mốc ${index + 1}`}><Trash2 className="h-4 w-4" /></button>
+              </div>
+            </div>
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <div className="text-sm font-bold leading-relaxed text-slate-900"><MathRenderer content={getContentDisplay(point)} inline /></div>
+              {point.title && <p className="mt-1 text-[11px] italic text-slate-500">Tiêu đề: {point.title}</p>}
+              {point.learningObjective && <p className="mt-2 rounded-lg bg-blue-50 px-2.5 py-1.5 text-[11px] text-blue-700"><strong>Mục tiêu:</strong> {point.learningObjective}</p>}
+              <div className="mt-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">{getAnswerSummary(point)}</div>
+            </div>
+          </article>
+        ))}
       </div>
 
       {/* Export & Sharing Bar */}
@@ -505,7 +420,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
             type="button"
             onClick={onExportOffline}
             disabled={isExportingOffline}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-violet-300 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-violet-700 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
             title="Đóng gói HTML, video và thư viện để dùng không mạng"
           >
             <PackageCheck className={`w-3.5 h-3.5 ${isExportingOffline ? 'animate-pulse' : ''}`} />
@@ -514,7 +429,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
           <button
             type="button"
             onClick={onOpenLmsEmbed}
-            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-cyan-200 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-700 hover:text-cyan-800 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
           >
             <Code className="w-3.5 h-3.5" />
             <span>Mã Nhúng LMS</span>
