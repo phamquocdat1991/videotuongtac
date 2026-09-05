@@ -305,7 +305,7 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
   const objectiveCoverage = interactions.filter((point) => point.learningObjective?.trim()).length;
 
   return (
-    <section aria-labelledby="script-panel-title" className="flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
+    <section aria-labelledby="script-panel-title" className="academic-panel academic-script flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">

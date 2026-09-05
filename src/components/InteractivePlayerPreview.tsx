@@ -347,7 +347,7 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
   };
 
   return (
-    <section aria-labelledby="preview-panel-title" className="flex flex-col gap-4 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
+    <section aria-labelledby="preview-panel-title" className="academic-panel academic-player flex flex-col gap-4 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">

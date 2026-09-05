@@ -169,7 +169,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   const isKeyValid = apiKey ? isValidGoogleAiApiKey(apiKey) : false;
 
   return (
-    <section aria-labelledby="source-panel-title" className="flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
+    <section aria-labelledby="source-panel-title" className="academic-panel academic-source flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Section Header with Active Model Status */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
