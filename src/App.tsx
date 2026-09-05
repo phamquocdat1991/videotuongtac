@@ -79,6 +79,7 @@ export default function App() {
   const [isLmsEmbedOpen, setIsLmsEmbedOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [editingPoint, setEditingPoint] = useState<InteractionPoint | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExportingOffline, setIsExportingOffline] = useState(false);
@@ -172,7 +173,13 @@ export default function App() {
   };
   const handleSaveInteraction = (point: InteractionPoint) => { const exists = interactions.some(item => item.id === point.id); setInteractions(validateAndNormalizeInteractions(exists ? interactions.map(item => item.id === point.id ? point : item) : [...interactions, point], videoDuration)); showToast('Đã lưu điểm tương tác.'); };
   const handleDuplicateInteraction = (point: InteractionPoint) => { const duplicate = structuredClone(point); duplicate.id = `point_${Date.now()}`; duplicate.timestamp = Math.min(Math.max(0, videoDuration - 5), point.timestamp + 10); duplicate.title = `${point.title} (bản sao)`; setInteractions(validateAndNormalizeInteractions([...interactions, duplicate], videoDuration)); showToast('Đã nhân bản điểm tương tác.'); };
-  const handleDeleteInteraction = (id: string) => { if (window.confirm('Xóa điểm tương tác này?')) { setInteractions(interactions.filter(point => point.id !== id)); showToast('Đã xóa điểm tương tác.', 'info'); } };
+  const handleDeleteInteraction = (id: string) => setPendingDeleteId(id);
+  const confirmDeleteInteraction = () => {
+    if (!pendingDeleteId) return;
+    setInteractions((current) => current.filter((point) => point.id !== pendingDeleteId));
+    setPendingDeleteId(null);
+    showToast('Đã xóa điểm tương tác.', 'info');
+  };
   const handleSeek = (seconds: number) => { setSeekTimestampTarget(seconds); window.setTimeout(() => setSeekTimestampTarget(null), 200); };
 
   const buildHtml = () => generateExportHtml(project.videoTitle, interactions, videoFile ? '' : videoUrl, videoFileName);
@@ -225,6 +232,8 @@ export default function App() {
       </main>
 
       <footer className="border-t border-slate-200 bg-white/70 px-6 py-5 text-[11px] text-slate-500"><div className="mx-auto flex max-w-[1480px] flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><span>Interactive Video Studio · Academic Workspace v2.8</span><span>Thiết kế bởi <strong className="text-slate-700">PHẠM QUỐC ĐẠT</strong> · Zalo 0705350000</span></div></footer>
+
+      {pendingDeleteId && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="delete-interaction-title" className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl"><div className="flex items-start gap-3"><div className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-rose-50 text-rose-600"><AlertCircle className="h-5 w-5" /></div><div><h2 id="delete-interaction-title" className="text-sm font-extrabold text-slate-900">Xóa điểm tương tác?</h2><p className="mt-1 text-xs leading-relaxed text-slate-500">Mốc này sẽ bị xóa khỏi kịch bản hiện tại. Bạn vẫn có thể khôi phục từ phiên bản đã lưu.</p></div></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setPendingDeleteId(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Hủy</button><button type="button" onClick={confirmDeleteInteraction} className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-rose-200 hover:bg-rose-500">Xóa mốc</button></div></section></div>}
 
       <ApiSettingsModal isOpen={isApiSettingsOpen} onClose={() => setIsApiSettingsOpen(false)} geminiApiKey={geminiApiKey} agentPlatformApiKey={agentPlatformApiKey} provider={provider} selectedModel={selectedModel} onSaveSettings={handleSaveApiSettings} />
       <ProjectManagerModal isOpen={isProjectManagerOpen} onClose={() => setIsProjectManagerOpen(false)} currentProject={project} onLoadProject={handleLoadProject} onShowToast={showToast} />
