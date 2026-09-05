@@ -9,6 +9,7 @@ import { MAX_VIDEO_BYTES, sanitizeFileName } from './projectSafety';
 
 async function fetchBytes(url: string): Promise<Uint8Array> { const response = await fetch(url); if (!response.ok) throw new Error(`Không thể đóng gói tài nguyên: ${response.status}`); return new Uint8Array(await response.arrayBuffer()); }
 async function fetchText(url: string): Promise<string> { const response = await fetch(url); if (!response.ok) throw new Error(`Không thể đóng gói stylesheet: ${response.status}`); return response.text(); }
+export const resolveAssetUrl = (assetUrl: string, pageUrl: string): string => new URL(assetUrl, pageUrl).toString();
 
 async function validateVideoFile(file: File): Promise<'mp4' | 'webm'> {
   if (file.size > MAX_VIDEO_BYTES) throw new Error('Video vượt quá 250 MiB, chưa phù hợp để tạo gói offline trên trình duyệt.');
@@ -20,9 +21,10 @@ async function validateVideoFile(file: File): Promise<'mp4' | 'webm'> {
 }
 
 async function bundleKatexCss(zip: JSZipType): Promise<void> {
-  let css = await fetchText(katexCssUrl); const matches = [...css.matchAll(/url\(([^)]+)\)/g)]; const replacements = new Map<string,string>();
+  const katexCssAbsoluteUrl = resolveAssetUrl(katexCssUrl, window.location.href);
+  let css = await fetchText(katexCssAbsoluteUrl); const matches = [...css.matchAll(/url\(([^)]+)\)/g)]; const replacements = new Map<string,string>();
   await Promise.all(matches.map(async match => { const source = match[1].replace(/["']/g, ''); if (replacements.has(source) || source.startsWith('data:')) return;
-    const absolute = new URL(source, katexCssUrl).toString(); const name = sanitizeFileName(new URL(absolute).pathname.split('/').pop() || 'font.woff2');
+    const absolute = new URL(source, katexCssAbsoluteUrl).toString(); const name = sanitizeFileName(new URL(absolute).pathname.split('/').pop() || 'font.woff2');
     zip.file(`assets/fonts/${name}`, await fetchBytes(absolute)); replacements.set(source, `./fonts/${name}`); }));
   replacements.forEach((target, source) => { css = css.split(source).join(target); }); zip.file('assets/katex.min.css', css);
 }
@@ -31,7 +33,7 @@ export async function createOfflinePackage(input: { videoTitle: string; videoFil
   const extension = await validateVideoFile(input.videoFile); const videoName = `${sanitizeFileName(input.videoFileName.replace(/\.[^/.]+$/, ''), 'video')}.${extension}`;
   const { default: JSZip } = await import('jszip'); const zip = new JSZip();
   zip.file('index.html', generateOfflineExportHtml(input.videoTitle, input.interactions, videoName, `./media/${videoName}`));
-  zip.file(`media/${videoName}`, input.videoFile); zip.file('assets/app.css', await fetchText(appCssUrl));
+  zip.file(`media/${videoName}`, await input.videoFile.arrayBuffer()); zip.file('assets/app.css', await fetchText(appCssUrl));
   zip.file('assets/katex.min.js', await fetchBytes(katexJsUrl)); zip.file('assets/confetti.browser.min.js', await fetchBytes(confettiJsUrl)); await bundleKatexCss(zip);
   zip.file('README.txt', `GÓI BÀI GIẢNG TƯƠNG TÁC OFFLINE\n\n1. Giải nén toàn bộ thư mục.\n2. Mở index.html bằng Chrome, Edge hoặc Firefox.\n3. Không đổi vị trí thư mục media và assets.\n\nBài giảng: ${input.videoTitle}\nPhiên bản: 2.8\n`);
   zip.file('THIRD_PARTY_LICENSES.txt', 'KaTeX — MIT License\nCanvas Confetti — ISC License\nJSZip — MIT/GPLv3 dual license\n');
