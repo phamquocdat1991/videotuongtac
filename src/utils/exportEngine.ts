@@ -1,5 +1,12 @@
 import { InteractionPoint } from '../types';
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function serializeForInlineScript(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+}
+
 export function generateExportHtml(
   videoTitle: string,
   interactions: InteractionPoint[],
@@ -10,8 +17,13 @@ export function generateExportHtml(
     zalo: '0705350000',
   }
 ): string {
-  const sanitizedInteractions = JSON.stringify(interactions, null, 2);
-  const titleSafe = videoTitle.replace(/"/g, '&quot;');
+  const sanitizedInteractions = serializeForInlineScript(interactions);
+  const serializedTitle = serializeForInlineScript(videoTitle);
+  const titleSafe = escapeHtml(videoTitle);
+  const videoSourceSafe = escapeHtml(videoSourceUrl);
+  const videoFileNameSafe = escapeHtml(videoFileName);
+  const authorNameSafe = escapeHtml(authorInfo.name);
+  const authorZaloSafe = escapeHtml(authorInfo.zalo.replace(/[^0-9+]/g, ''));
 
   return `<!DOCTYPE html>
 <html lang="vi">
@@ -22,8 +34,8 @@ export function generateExportHtml(
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <!-- KaTeX for Beautiful Math Formula Rendering -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -59,10 +71,10 @@ export function generateExportHtml(
       <div class="flex items-center gap-2 bg-slate-800/90 border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-sm text-xs">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
         <span class="text-slate-400 font-medium">Bản quyền:</span>
-        <span class="text-indigo-300 font-bold uppercase tracking-wide">ANH GIÁO: ${authorInfo.name}</span>
+        <span class="text-indigo-300 font-bold uppercase tracking-wide">ANH GIÁO: ${authorNameSafe}</span>
         <span class="text-slate-600">|</span>
-        <a href="https://zalo.me/${authorInfo.zalo}" target="_blank" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 transition-colors">
-          Zalo: ${authorInfo.zalo}
+        <a href="https://zalo.me/${authorZaloSafe}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 transition-colors">
+          Zalo: ${authorZaloSafe}
         </a>
       </div>
     </div>
@@ -81,7 +93,7 @@ export function generateExportHtml(
           id="main-video" 
           class="w-full h-full object-contain cursor-pointer"
           playsinline
-          ${videoSourceUrl ? `src="${videoSourceUrl}"` : ''}
+          ${videoSourceUrl ? `src="${videoSourceSafe}"` : ''}
         >
           Trình duyệt của bạn không hỗ trợ phát video HTML5.
         </video>
@@ -92,7 +104,7 @@ export function generateExportHtml(
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
           </div>
           <h3 class="text-lg font-bold text-white mb-2">Chọn file Video bài giảng trên máy của bạn</h3>
-          <p class="text-sm text-slate-400 max-w-md mb-5">Vui lòng chọn file video (<span class="text-indigo-300 font-mono">${videoFileName}</span> hoặc bất kỳ file video .mp4 nào) để bắt đầu học.</p>
+          <p class="text-sm text-slate-400 max-w-md mb-5">Vui lòng chọn file video (<span class="text-indigo-300 font-mono">${videoFileNameSafe}</span> hoặc bất kỳ file video .mp4 nào) để bắt đầu học.</p>
           <label class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-xl cursor-pointer shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
             <span>Tải Video Lên Trình Chiếu</span>
@@ -266,7 +278,7 @@ export function generateExportHtml(
   <!-- Audio & KaTeX Logic -->
   <script>
     const RAW_INTERACTIONS = ${sanitizedInteractions};
-    const VIDEO_TITLE = "${titleSafe}";
+    const VIDEO_TITLE = ${serializedTitle};
 
     let interactions = JSON.parse(JSON.stringify(RAW_INTERACTIONS)).sort((a, b) => a.timestamp - b.timestamp);
     let completedPoints = new Set();
@@ -315,18 +327,16 @@ export function generateExportHtml(
     const btnPrintResult = document.getElementById('btn-print-result');
     const btnCopyCode = document.getElementById('btn-copy-code');
 
-    // Render KaTeX in text string
+    function escapeHtml(text) {
+      return String(text ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
     function renderMath(text) {
-      if (!text) return '';
-      if (typeof window.katex === 'undefined') return text;
-
-      return text.replace(/\\$([^\\$\\n]+?)\\$/g, function(match, tex) {
-        try {
-          return window.katex.renderToString(tex.trim(), { displayMode: false, throwOnError: false });
-        } catch(e) {
-          return match;
-        }
-      });
+      if (!text) return ''; const value = String(text); if (typeof window.katex === 'undefined') return escapeHtml(value);
+      let result = ''; let lastIndex = 0; const expression = /\\$([^\\$\\n]+?)\\$/g; let match;
+      while ((match = expression.exec(value)) !== null) { result += escapeHtml(value.slice(lastIndex, match.index));
+        try { result += window.katex.renderToString(match[1].trim(), { displayMode: false, throwOnError: false }); } catch(e) { result += escapeHtml(match[0]); }
+        lastIndex = expression.lastIndex; }
+      return result + escapeHtml(value.slice(lastIndex));
     }
 
     // Audio SFX using Web Audio API
@@ -406,7 +416,7 @@ export function generateExportHtml(
         item.className = 'p-3 rounded-xl border text-xs flex items-center justify-between cursor-pointer transition-all ' +
           (isDone ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700');
         item.innerHTML = '<div>' +
-          '<div class="font-semibold">' + (idx + 1) + '. ' + pt.title + '</div>' +
+          '<div class="font-semibold">' + (idx + 1) + '. ' + escapeHtml(pt.title) + '</div>' +
           '<div class="text-[11px] text-slate-400 font-mono mt-0.5">' + formatTime(pt.timestamp) + '</div>' +
           '</div>' +
           (isDone ? '<span class="text-emerald-400 font-bold">✓ Đã giải</span>' : '<span class="text-amber-400">Đang chờ</span>');
@@ -470,14 +480,14 @@ export function generateExportHtml(
           '<input type="text" id="input-fb-answer" placeholder="Nhập đáp án điền vào..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:border-amber-500 focus:outline-none">' +
           (point.data.hint ? '<button id="btn-fb-hint" class="px-2.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold rounded-xl">💡 Gợi ý</button>' : '') +
           '</div>' +
-          (point.data.hint ? '<div id="fb-hint-text" class="hidden mt-2 p-2 bg-amber-950/40 border border-amber-500/30 rounded-xl text-xs text-amber-200">Gợi ý: ' + point.data.hint + '</div>' : '');
+          (point.data.hint ? '<div id="fb-hint-text" class="hidden mt-2 p-2 bg-amber-950/40 border border-amber-500/30 rounded-xl text-xs text-amber-200">Gợi ý: ' + escapeHtml(point.data.hint) + '</div>' : '');
         footerHtml = '<button id="btn-submit-action" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 px-5 rounded-xl text-xs shadow transition-all cursor-pointer">Kiểm Tra Điền Từ</button>';
       } else if (point.data.type === 'drag_drop') {
         modalTypeBadge.innerText = 'Kéo thả phân loại';
         bodyHtml += '<div class="text-xs font-bold text-white mb-2">' + renderMath(point.data.instruction) + '</div>' +
           '<div class="grid grid-cols-2 gap-2 mb-3" id="dd-slots">';
         point.data.categories.forEach(cat => {
-          bodyHtml += '<div class="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 min-h-[90px] flex flex-col" data-cat="' + cat + '">' +
+          bodyHtml += '<div class="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 min-h-[90px] flex flex-col" data-cat="' + escapeHtml(cat) + '">' +
             '<div class="text-[11px] font-bold text-violet-300 uppercase mb-1.5 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span><span>' + renderMath(cat) + '</span></div>' +
             '<div class="slot-items space-y-1 flex-1"></div>' +
             '</div>';
@@ -486,11 +496,11 @@ export function generateExportHtml(
           '<div class="text-[11px] text-slate-400 font-semibold mb-1.5">Bấm vào thẻ để xếp vào nhóm:</div>' +
           '<div class="flex flex-wrap gap-1.5" id="dd-pool">';
         point.data.items.forEach(it => {
-          bodyHtml += '<div class="relative group/drop" data-item-id="' + it.id + '">' +
+          bodyHtml += '<div class="relative group/drop" data-item-id="' + escapeHtml(it.id) + '">' +
             '<span class="inline-block bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-medium px-2.5 py-1 rounded-lg cursor-pointer">' + renderMath(it.text) + '</span>' +
             '<div class="absolute left-0 bottom-full mb-1 hidden group-hover/drop:flex flex-col bg-slate-900 border border-slate-700 rounded-lg p-1 shadow-xl z-30 whitespace-nowrap min-w-[120px]">';
           point.data.categories.forEach(cat => {
-            bodyHtml += '<button type="button" class="btn-drop-cat text-left text-[10px] text-violet-300 hover:bg-slate-800 p-1 rounded font-medium" data-cat="' + cat + '" data-item-id="' + it.id + '">→ ' + cat + '</button>';
+            bodyHtml += '<button type="button" class="btn-drop-cat text-left text-[10px] text-violet-300 hover:bg-slate-800 p-1 rounded font-medium" data-cat="' + escapeHtml(cat) + '" data-item-id="' + escapeHtml(it.id) + '">→ ' + escapeHtml(cat) + '</button>';
           });
           bodyHtml += '</div></div>';
         });
@@ -803,4 +813,14 @@ export function generateExportHtml(
   </script>
 </body>
 </html>`;
+}
+
+export function generateOfflineExportHtml(videoTitle: string, interactions: InteractionPoint[], videoFileName: string, localVideoPath: string): string {
+  return generateExportHtml(videoTitle, interactions, localVideoPath, videoFileName)
+    .replace('<script src="https://cdn.tailwindcss.com"></script>', '<link rel="stylesheet" href="./assets/app.css">')
+    .replace('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>', '<script src="./assets/confetti.browser.min.js"></script>')
+    .replace('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">', '<link rel="stylesheet" href="./assets/katex.min.css">')
+    .replace('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>', '<script src="./assets/katex.min.js"></script>')
+    .replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">/g, '').replace(/\s*<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>/g, '')
+    .replace(/\s*<link href="https:\/\/fonts\.googleapis\.com\/css2[^>]+>/g, '');
 }

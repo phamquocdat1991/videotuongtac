@@ -347,14 +347,14 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6 shadow-xl flex flex-col gap-4">
+    <section aria-labelledby="preview-panel-title" className="flex flex-col gap-4 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-pulse"></div>
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-            Trình Chiếu Xem Thử &bull; Trực Quan Sư Phạm
+          <h2 id="preview-panel-title" className="text-sm font-bold text-white tracking-wide">
+            Xem trước trải nghiệm người học
           </h2>
         </div>
         <div className="flex items-center gap-3 text-xs font-medium">
@@ -860,6 +860,6 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
 
       </div>
 
-    </div>
+    </section>
   );
 };

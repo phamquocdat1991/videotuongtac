@@ -24,7 +24,7 @@ export const isValidGoogleAiApiKey = (key: string): boolean => {
 // ============================================================================
 
 /** Model mặc định: gemini-3.6-flash — Stable/GA kể từ 21/07/2026 */
-export const GEMINI_DEFAULT_MODEL = 'gemini-3.6-flash';
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
 
 /**
  * Chuỗi fallback Gemini API (chỉ dùng model GA/stable):
@@ -35,6 +35,8 @@ export const GEMINI_DEFAULT_MODEL = 'gemini-3.6-flash';
  * Ưu tiên 5: gemini-2.5-flash — dự phòng cuối chuỗi
  */
 export const GEMINI_FALLBACK_MODELS: string[] = [
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
   'gemini-3.6-flash',
   'gemini-3.5-flash',
   'gemini-3.5-flash-lite',
@@ -71,13 +73,14 @@ export interface ModelCardInfo {
 
 /** Danh sách model Gemini API hiển thị trên giao diện cài đặt */
 export const GEMINI_MODEL_DETAILS: ModelCardInfo[] = [
+  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', badge: 'Mặc định · Stable', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40', description: 'Model Flash stable mới nhất, ưu tiên cho phân tích tài liệu và thiết kế hoạt động sư phạm.', isDefault: true },
+  { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash', badge: 'Dự phòng mới', badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40', description: 'Model stable dự phòng với độ trễ thấp và khả năng xử lý đa phương thức tốt.' },
   {
     id: 'gemini-3.6-flash',
     name: 'Gemini 3.6 Flash',
-    badge: 'Mặc định — GA (21/07/2026)',
-    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-    description: 'Model thế hệ mới nhất (Stable/GA). Tốc độ phản hồi tức thì, tối ưu phân tích sư phạm đa bước, chi phí thấp hơn 3.5 Flash.',
-    isDefault: true,
+    badge: 'Tương thích ổn định',
+    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+    description: 'Bản stable tương thích tốt với các dự án đã tạo ở v2.7.',
   },
   {
     id: 'gemini-3.5-flash',

@@ -40,11 +40,12 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
   onClose,
   onSave,
 }) => {
-  if (!isOpen || !point) return null;
-
-  const [type, setType] = useState<InteractionType>(point.data.type || 'quiz');
-  const [timestamp, setTimestamp] = useState<number>(point.timestamp || 10);
-  const [title, setTitle] = useState<string>(point.title || '');
+  const [type, setType] = useState<InteractionType>(point?.data.type || 'quiz');
+  const [timestamp, setTimestamp] = useState<number>(point?.timestamp || 10);
+  const [title, setTitle] = useState<string>(point?.title || '');
+  const [learningObjective, setLearningObjective] = useState<string>(point?.learningObjective || '');
+  const [cognitiveLevel, setCognitiveLevel] = useState<InteractionPoint['cognitiveLevel']>(point?.cognitiveLevel || 'unclassified');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // 1. Single Quiz states
   const [question, setQuestion] = useState<string>('');
@@ -91,6 +92,9 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
       setType(point.data.type);
       setTimestamp(point.timestamp);
       setTitle(point.title || '');
+      setLearningObjective(point.learningObjective || '');
+      setCognitiveLevel(point.cognitiveLevel || 'unclassified');
+      setValidationError(null);
 
       if (point.data.type === 'quiz') {
         const q = point.data as QuizInteraction;
@@ -131,36 +135,53 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
     }
   }, [point]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen, onClose]);
+
   const handleSave = () => {
+    if (!point) return;
+    if (!title.trim()) { setValidationError('Hãy nhập tiêu đề điểm dừng.'); return; }
+    if (timestamp < 0 || (videoDuration > 0 && timestamp >= videoDuration)) { setValidationError('Mốc dừng phải nằm trong thời lượng video.'); return; }
+    if (type === 'quiz' && (!question.trim() || options.filter((item) => item.trim()).length < 2 || !quizExplanation.trim())) { setValidationError('Trắc nghiệm cần câu hỏi, ít nhất 2 lựa chọn và phần giải thích.'); return; }
+    if (type === 'multi_choice' && (!mcQuestion.trim() || mcOptions.filter((item) => item.trim()).length < 2 || !mcCorrectAnswers.length || !mcExplanation.trim())) { setValidationError('Câu đa đáp án cần nội dung, lựa chọn, đáp án đúng và giải thích.'); return; }
+    if (type === 'true_false' && (!tfStatement.trim() || !tfExplanation.trim())) { setValidationError('Câu Đúng/Sai cần nhận định và phần giải thích.'); return; }
+    if (type === 'drag_drop' && (categories.filter((item) => item.trim()).length < 2 || items.filter((item) => item.text.trim()).length < 2)) { setValidationError('Kéo thả cần ít nhất 2 nhóm và 2 thẻ có nội dung.'); return; }
+    if (type === 'fill_blank' && (!sentence.includes('{...}') || !blankAnswer.trim())) { setValidationError('Câu điền khuyết cần ký hiệu {...} và đáp án.'); return; }
+    if (type === 'checkpoint_note' && (!noteSummary.trim() || !keyTakeaways.some((item) => item.trim()))) { setValidationError('Thẻ tóm tắt cần nội dung và ít nhất một ý chính.'); return; }
+    setValidationError(null);
     let interactionData;
 
     if (type === 'quiz') {
       interactionData = {
         type: 'quiz' as const,
-        question: question.trim() || 'Câu hỏi trắc nghiệm',
-        options: options.map((opt, i) => opt.trim() || `Lựa chọn ${i + 1}`),
+        question: question.trim(),
+        options: options.map((opt) => opt.trim()),
         correctAnswer: Math.max(0, Math.min(options.length - 1, correctAnswer)),
         explanation: quizExplanation.trim(),
       };
     } else if (type === 'multi_choice') {
       interactionData = {
         type: 'multi_choice' as const,
-        question: mcQuestion.trim() || 'Câu hỏi chọn nhiều đáp án',
-        options: mcOptions.map((opt, i) => opt.trim() || `Lựa chọn ${i + 1}`),
-        correctAnswers: mcCorrectAnswers.length > 0 ? mcCorrectAnswers : [0],
+        question: mcQuestion.trim(),
+        options: mcOptions.map((opt) => opt.trim()),
+        correctAnswers: mcCorrectAnswers,
         explanation: mcExplanation.trim(),
       };
     } else if (type === 'true_false') {
       interactionData = {
         type: 'true_false' as const,
-        statement: tfStatement.trim() || 'Nhận định đúng hoặc sai',
+        statement: tfStatement.trim(),
         isCorrect: tfIsCorrect,
         explanation: tfExplanation.trim(),
       };
     } else if (type === 'drag_drop') {
       interactionData = {
         type: 'drag_drop' as const,
-        instruction: instruction.trim() || 'Kéo thả các thẻ vào đúng danh mục:',
+        instruction: instruction.trim(),
         categories: categories.map((c) => c.trim()).filter(Boolean),
         items: items.map((it, idx) => ({
           id: it.id || `item_${idx}`,
@@ -172,7 +193,7 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
     } else if (type === 'fill_blank') {
       interactionData = {
         type: 'fill_blank' as const,
-        sentence: sentence.trim() || 'Câu có chỗ trống {...}',
+        sentence: sentence.trim(),
         blankAnswer: blankAnswer.trim(),
         hint: hint.trim(),
         explanation: fbExplanation.trim(),
@@ -180,7 +201,7 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
     } else {
       interactionData = {
         type: 'checkpoint_note' as const,
-        title: noteTitle.trim() || 'Ghi nhớ trọng tâm',
+        title: noteTitle.trim() || title.trim(),
         summary: noteSummary.trim(),
         keyTakeaways: keyTakeaways.map((t) => t.trim()).filter(Boolean),
         reflectionQuestion: reflectionQuestion.trim(),
@@ -190,19 +211,9 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
     onSave({
       id: point.id,
       timestamp: Math.max(0, Math.round(timestamp)),
-      title:
-        title.trim() ||
-        (type === 'quiz'
-          ? 'Trắc nghiệm đơn'
-          : type === 'multi_choice'
-          ? 'Chọn nhiều đáp án'
-          : type === 'true_false'
-          ? 'Đúng/Sai'
-          : type === 'drag_drop'
-          ? 'Kéo thả'
-          : type === 'fill_blank'
-          ? 'Điền từ'
-          : 'Thẻ tóm tắt'),
+      title: title.trim(),
+      learningObjective: learningObjective.trim() || undefined,
+      cognitiveLevel,
       data: interactionData,
     });
     onClose();
@@ -214,9 +225,11 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
     return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
   };
 
+  if (!isOpen || !point) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div role="dialog" aria-modal="true" aria-labelledby="interaction-editor-title" className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
@@ -225,15 +238,17 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Chỉnh Sửa Điểm Dừng Tương Tác</h3>
+              <h3 id="interaction-editor-title" className="text-base font-bold text-white">Chỉnh Sửa Điểm Dừng Tương Tác</h3>
               <p className="text-xs text-slate-400">Điều chỉnh thời gian, loại bài tập và câu hỏi sư phạm</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-100 rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
+            <span className="sr-only">Đóng trình chỉnh sửa</span>
           </button>
         </div>
 
@@ -282,6 +297,13 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
             </div>
 
           </div>
+
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-2">
+            <div><label className="mb-1.5 block font-semibold text-slate-300">Mục tiêu học tập <span className="font-normal text-slate-500">(khuyến nghị)</span></label><input type="text" value={learningObjective} onChange={(event) => setLearningObjective(event.target.value)} placeholder="VD: Phân biệt pha sáng và pha tối" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none" /></div>
+            <div><label className="mb-1.5 block font-semibold text-slate-300">Mức độ nhận thức</label><select value={cognitiveLevel} onChange={(event) => setCognitiveLevel(event.target.value as InteractionPoint['cognitiveLevel'])} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none"><option value="unclassified">Chưa phân loại</option><option value="recognition">Nhận biết</option><option value="understanding">Thông hiểu</option><option value="application">Vận dụng</option></select></div>
+          </div>
+
+          {validationError && <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{validationError}</div>}
 
           {/* Type Selector (6 Types) */}
           <div>

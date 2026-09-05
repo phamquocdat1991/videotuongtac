@@ -82,6 +82,8 @@ export interface InteractionPoint {
   timestamp: number; // seconds
   title: string;
   data: InteractionData;
+  learningObjective?: string;
+  cognitiveLevel?: 'unclassified' | 'recognition' | 'understanding' | 'application';
   completed?: boolean;
 }
 
@@ -90,13 +92,35 @@ export interface LessonMaterial {
   type: 'pdf' | 'image' | 'text' | 'docx';
   content?: string; // extracted text
   previewUrl?: string;
+  mimeType?: string;
+  size?: number;
+  requiresReupload?: boolean;
+  fileSha256?: string;
+  fileSize?: number;
+  uploadMode?: 'inline' | 'files-api';
+  requiresFilesApi?: boolean;
+  inlineData?: { mimeType: string; data: string };
+}
+
+export interface GeminiFileReference {
+  id: string;
+  projectFingerprint: string;
+  fileSha256: string;
+  resourceName: string;
+  uri: string;
+  mimeType: string;
+  sizeBytes: number;
+  createdAt: string;
+  expiresAt: string;
 }
 
 export type AiProvider = 'gemini' | 'agent-platform';
 
 export interface AppSettings {
-  geminiApiKey: string;
-  agentPlatformApiKey: string;
+  /** @deprecated Bí mật chỉ tồn tại trong bộ nhớ tab, không lưu cùng dự án. */
+  geminiApiKey?: string;
+  /** @deprecated Bí mật chỉ tồn tại trong bộ nhớ tab, không lưu cùng dự án. */
+  agentPlatformApiKey?: string;
   provider: AiProvider;
   selectedModel: string;
   authorName: string;

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X,
   FolderOpen,
@@ -10,8 +10,12 @@ import {
   CheckCircle,
   Sparkles,
   RefreshCw,
+  History,
 } from 'lucide-react';
 import { InteractionPoint, ProjectData, AppSettings, LessonMaterial } from '../types';
+import { createSafeProject, parseProjectJson, sanitizeFileName } from '../utils/projectSafety';
+
+const SNAPSHOT_KEY = 'videocreator_project_snapshots_v28';
 
 interface ProjectManagerModalProps {
   isOpen: boolean;
@@ -40,23 +44,29 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
   onShowToast,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [snapshots, setSnapshots] = useState<ProjectData[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try { setSnapshots(JSON.parse(localStorage.getItem(SNAPSHOT_KEY) || '[]')); } catch { setSnapshots([]); }
+    const closeOnEscape = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+  const getSafeCurrentProject = () => createSafeProject(currentProject);
 
   // 1. Export current project as JSON file
   const handleExportJson = () => {
-    const projectData: ProjectData = {
-      version: '2.5',
-      ...currentProject,
-      lastUpdated: new Date().toISOString(),
-    };
+    const projectData = getSafeCurrentProject();
 
     const jsonString = JSON.stringify(projectData, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kich_ban_tuong_tac_${currentProject.videoFileName.replace(/\.[^/.]+$/, '')}_${Date.now()}.json`;
+    a.download = `kich_ban_tuong_tac_${sanitizeFileName(currentProject.videoFileName.replace(/\.[^/.]+$/, ''))}_${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -72,19 +82,22 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const parsed = JSON.parse(text) as ProjectData;
-        if (parsed && parsed.interactions && Array.isArray(parsed.interactions)) {
-          onLoadProject(parsed);
-          onShowToast(`Đã nạp thành công dự án: ${parsed.videoTitle || 'Dự án video'}`);
-          onClose();
-        } else {
-          alert('File JSON không đúng định dạng kịch bản video tương tác!');
-        }
-      } catch (err) {
-        alert('Lỗi đọc file JSON. Vui lòng kiểm tra lại file!');
+        const parsed = parseProjectJson(text);
+        onLoadProject(parsed);
+        onShowToast(`Đã nạp thành công dự án: ${parsed.videoTitle || 'Dự án video'}`);
+        onClose();
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'Lỗi đọc file JSON. Vui lòng kiểm tra lại file!');
       }
     };
     reader.readAsText(file);
+  };
+
+  const saveSnapshot = () => {
+    const next = [getSafeCurrentProject(), ...snapshots].slice(0, 8);
+    localStorage.setItem(SNAPSHOT_KEY, JSON.stringify(next));
+    setSnapshots(next);
+    onShowToast('Đã tạo một phiên bản khôi phục trên trình duyệt.');
   };
 
   // 3. Subject preset templates
@@ -137,7 +150,7 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div role="dialog" aria-modal="true" aria-labelledby="project-manager-title" className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
@@ -146,15 +159,17 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
               <FolderOpen className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Quản Lý Dự Án &amp; Kịch Bản Bài Học</h3>
+              <h3 id="project-manager-title" className="text-base font-bold text-white">Quản Lý Dự Án &amp; Kịch Bản Bài Học</h3>
               <p className="text-xs text-slate-400">Lưu dự án, xuất nhập file JSON và nạp các kịch bản mẫu</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-100 rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
+            <span className="sr-only">Đóng quản lý dự án</span>
           </button>
         </div>
 
@@ -216,11 +231,19 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
             </div>
           </div>
 
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h4 className="flex items-center gap-2 text-sm font-bold text-slate-200"><History className="h-4 w-4 text-cyan-400" /><span>2. Lịch sử phiên bản cục bộ</span></h4>
+              <button type="button" onClick={saveSnapshot} className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 px-3 py-1.5 text-[11px] font-bold text-cyan-200 hover:bg-cyan-500/20"><Save className="h-3.5 w-3.5" />Tạo phiên bản</button>
+            </div>
+            {snapshots.length === 0 ? <p className="rounded-xl border border-dashed border-slate-700 px-3 py-4 text-center text-[11px] text-slate-500">Chưa có phiên bản. Tạo một mốc trước khi chỉnh sửa lớn.</p> : <div className="space-y-2">{snapshots.slice(0, 4).map((snapshot, index) => <div key={`${snapshot.lastUpdated}-${index}`} className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-2"><div className="min-w-0"><p className="truncate font-semibold text-slate-200">{snapshot.videoTitle}</p><p className="text-[10px] text-slate-500">{new Date(snapshot.lastUpdated).toLocaleString('vi-VN')} · {snapshot.interactions.length} mốc</p></div><button type="button" onClick={() => { onLoadProject(snapshot); onShowToast('Đã khôi phục phiên bản đã chọn.'); onClose(); }} className="flex-none rounded-lg border border-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-300 hover:border-cyan-500/40 hover:text-cyan-200">Khôi phục</button></div>)}</div>}
+          </div>
+
           {/* Section 2: Preset Subject Templates */}
           <div>
             <h4 className="text-slate-200 font-bold text-sm mb-3 flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-amber-400" />
-              <span>2. Kịch Bản Mẫu Theo Môn Học (Sẵn sàng chạy thử)</span>
+              <span>3. Mẫu khởi tạo theo môn học</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -248,13 +271,13 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
 
                   <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between">
                     <span className="text-[10px] text-slate-500">
-                      {preset.interactionsCount} mốc tương tác
+                      Bắt đầu với kịch bản trống
                     </span>
                     <button
                       type="button"
                       onClick={() => {
                         onLoadProject({
-                          version: '2.5',
+                          version: '2.8',
                           videoTitle: preset.title,
                           videoUrl: preset.url,
                           videoFileName: preset.fileName,

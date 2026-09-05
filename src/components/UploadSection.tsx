@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { LessonMaterial, AiProvider } from '../types';
 import { isValidGoogleAiApiKey } from '../services/aiClientFactory';
+import { parseLessonFile } from '../utils/documentParser';
+import { MAX_VIDEO_BYTES, validateDirectVideoUrl } from '../utils/projectSafety';
 
 interface UploadSectionProps {
   apiKey: string;
@@ -33,6 +35,7 @@ interface UploadSectionProps {
   onVideoSelected: (file: File | null, url: string, name: string) => void;
   lessonMaterial: LessonMaterial | null;
   onLessonMaterialChange: (material: LessonMaterial | null) => void;
+  onLessonFileChange: (file: File | null) => void;
   lessonText: string;
   onLessonTextChange: (text: string) => void;
   subject: string;
@@ -54,6 +57,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   onVideoSelected,
   lessonMaterial,
   onLessonMaterialChange,
+  onLessonFileChange,
   lessonText,
   onLessonTextChange,
   subject,
@@ -66,6 +70,8 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   const [dragActiveVideo, setDragActiveVideo] = useState(false);
   const [urlInput, setUrlInput] = useState<string>('');
   const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [documentState, setDocumentState] = useState<{ status: 'idle' | 'reading' | 'error'; message?: string }>({ status: 'idle' });
   const videoInputRef = useRef<HTMLInputElement>(null);
   const docInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,11 +131,15 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   ];
 
   const handleVideoFile = (file: File) => {
-    if (file && file.type.startsWith('video/')) {
+    const supported = ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type) || /\.(mp4|webm|mov)$/i.test(file.name);
+    if (supported && file.size <= MAX_VIDEO_BYTES) {
       const url = URL.createObjectURL(file);
       onVideoSelected(file, url, file.name);
+      setUrlError(null);
+    } else if (file.size > MAX_VIDEO_BYTES) {
+      setUrlError('Video vượt quá 250 MiB. Hãy nén video trước khi tải lên.');
     } else {
-      alert('Vui lòng chọn đúng định dạng file video (.mp4, .webm, .mov)!');
+      setUrlError('Vui lòng chọn đúng định dạng video MP4, WebM hoặc MOV.');
     }
   };
 
@@ -138,64 +148,28 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
     const trimmed = urlInput.trim();
     if (!trimmed) return;
 
-    // Trích tên file từ URL để hiển thị
-    let displayName = 'video_truc_tuyen.mp4';
-    try {
-      const u = new URL(trimmed);
-      const pathParts = u.pathname.split('/');
-      const lastPart = pathParts[pathParts.length - 1];
-      if (lastPart && lastPart.includes('.')) displayName = lastPart;
-      else if (u.hostname.includes('youtube')) displayName = 'YouTube_Video.mp4';
-      else if (u.hostname.includes('drive.google')) displayName = 'Google_Drive_Video.mp4';
-    } catch {
-      // URL không hợp lệ dùng tên mặc định
-    }
-
-    onVideoSelected(null, trimmed, displayName);
+    const result = validateDirectVideoUrl(trimmed);
+    if ('message' in result) { setUrlError(result.message); return; }
+    onVideoSelected(null, result.url, result.fileName);
+    setUrlError(null);
     setUrlInput('');
     setShowUrlInput(false);
   };
 
-  const handleDocFile = (file: File) => {
+  const handleDocFile = async (file: File) => {
     if (!file) return;
-    const reader = new FileReader();
-
-    if (file.type === 'text/plain' || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        onLessonTextChange(text);
-        onLessonMaterialChange({
-          name: file.name,
-          type: 'text',
-          content: text,
-        });
-      };
-      reader.readAsText(file);
-    } else if (file.type.startsWith('image/')) {
-      const previewUrl = URL.createObjectURL(file);
-      onLessonMaterialChange({
-        name: file.name,
-        type: 'image',
-        previewUrl,
-      });
-      if (!lessonText) {
-        onLessonTextChange(`[Ảnh bài giảng: ${file.name}] Phân tích nội dung kiến thức hiển thị trên ảnh bài giảng để tạo câu hỏi.`);
-      }
-    } else {
-      onLessonMaterialChange({
-        name: file.name,
-        type: 'pdf',
-      });
-      if (!lessonText) {
-        onLessonTextChange(`[Tài liệu đính kèm: ${file.name}] Tóm tắt nội dung bài học và tạo các câu hỏi trắc nghiệm kiểm tra độ hiểu bài.`);
-      }
-    }
+    setDocumentState({ status: 'reading' });
+    try { const material = await parseLessonFile(file); if (material.type === 'image') material.previewUrl = URL.createObjectURL(file);
+      onLessonMaterialChange(material); onLessonFileChange(material.type === 'pdf' ? file : null);
+      if (material.content) onLessonTextChange(material.content); else if (!lessonText.trim()) onLessonTextChange(material.type === 'image' ? `[Ảnh bài giảng: ${file.name}] Phân tích nội dung kiến thức trong ảnh để tạo câu hỏi.` : `[Tài liệu PDF: ${file.name}] Phân tích nội dung tài liệu để tạo câu hỏi.`);
+      setDocumentState({ status: 'idle' });
+    } catch (error) { setDocumentState({ status: 'error', message: error instanceof Error ? error.message : 'Không thể đọc tài liệu đã chọn.' }); }
   };
 
   const isKeyValid = apiKey ? isValidGoogleAiApiKey(apiKey) : false;
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6 shadow-xl flex flex-col gap-5">
+    <section aria-labelledby="source-panel-title" className="flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Section Header with Active Model Status */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
@@ -204,8 +178,8 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
             <Sliders className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white">Khu Vực 1: Cài Đặt &amp; Nguồn Bài Học</h2>
-            <p className="text-xs text-slate-400">Thiết lập kết nối AI, video bài giảng và nội dung kiến thức</p>
+            <h2 id="source-panel-title" className="text-base font-bold text-white">Nguồn bài học</h2>
+            <p className="text-xs text-slate-400">Chọn video, ngữ cảnh lớp học và tài liệu nền</p>
           </div>
         </div>
 
@@ -337,14 +311,14 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
               className="w-full flex items-center justify-center gap-2 py-1.5 text-[11px] text-slate-400 hover:text-indigo-300 border border-dashed border-slate-700/60 hover:border-indigo-500/40 rounded-lg transition-all"
             >
               <Link className="w-3.5 h-3.5" />
-              <span>Hoặc nhập URL video trực tuyến (MP4, Google Drive, v.v.)</span>
+              <span>Hoặc nhập URL trực tiếp tới video MP4/WebM</span>
             </button>
           ) : (
             <div className="flex gap-2 items-center">
               <input
                 type="url"
                 value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
+                onChange={(e) => { setUrlInput(e.target.value); setUrlError(null); }}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlSubmit()}
                 placeholder="Dán URL video trực tiếp (https://...mp4)"
                 className="flex-1 bg-slate-950/80 border border-indigo-500/50 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
@@ -361,13 +335,15 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => { setShowUrlInput(false); setUrlInput(''); }}
+                onClick={() => { setShowUrlInput(false); setUrlInput(''); setUrlError(null); }}
                 className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors text-xs"
+                aria-label="Đóng nhập URL"
               >
                 ✕
               </button>
             </div>
           )}
+          {urlError && <p role="alert" className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-rose-300"><AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" /><span>{urlError}</span></p>}
         </div>
 
         {/* Quick Sample Video Buttons */}
@@ -383,6 +359,8 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
                   onSubjectChange(sample.subject);
                   onGradeChange(sample.grade);
                   onLessonTextChange(sample.lessonSnippet);
+                  onLessonMaterialChange(null);
+                  onLessonFileChange(null);
                 }}
                 className="text-xs bg-slate-800 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5"
               >
@@ -416,7 +394,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
             className="flex-1 bg-slate-950/80 hover:bg-slate-800 border border-slate-700/80 rounded-xl px-3 py-2 text-xs font-medium text-slate-300 hover:text-white flex items-center justify-center gap-2 transition-all"
           >
             <Upload className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{lessonMaterial ? `Đã đính kèm: ${lessonMaterial.name}` : 'Tải file Giáo án (.pdf, .txt, .docx, ảnh)'}</span>
+            <span>{documentState.status === 'reading' ? 'Đang kiểm tra và đọc tài liệu…' : lessonMaterial ? `Đã đính kèm: ${lessonMaterial.name}` : 'Tải giáo án PDF, TXT, DOCX hoặc ảnh'}</span>
           </button>
           <input
             ref={docInputRef}
@@ -425,11 +403,13 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
             className="hidden"
             onChange={(e) => {
               if (e.target.files && e.target.files[0]) {
-                handleDocFile(e.target.files[0]);
+                void handleDocFile(e.target.files[0]);
               }
             }}
           />
         </div>
+        {documentState.status === 'error' && <p role="alert" className="flex items-start gap-1.5 text-[11px] leading-relaxed text-rose-300"><AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-none" /><span>{documentState.message}</span></p>}
+        {lessonMaterial?.requiresFilesApi && <p className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-[11px] leading-relaxed text-cyan-200">PDF lớn sẽ được tải tạm lên Gemini Files API khi phân tích và tự hết hạn sau khoảng 48 giờ.</p>}
 
         {/* Text Area Content */}
         <textarea
@@ -447,7 +427,7 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
           type="button"
           disabled={isAnalyzing}
           onClick={onAnalyze}
-          className="w-full bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+          className="w-full bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 hover:brightness-110 disabled:opacity-50 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-950/60 flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
         >
           {isAnalyzing ? (
             <>
@@ -464,10 +444,10 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
         <p className="text-[11px] text-center text-slate-500 mt-2">
           {apiKey && isKeyValid
             ? `Đang kết nối: ${selectedModel} (Tự động fallback nếu quá tải)`
-            : 'Chưa có API Key: Hệ thống sẽ tạo kịch bản sư phạm mẫu có sẵn'}
+            : 'Chưa có API Key: mở Cài đặt AI để nhập key; chỉnh sửa thủ công vẫn dùng bình thường.'}
         </p>
       </div>
 
-    </div>
+    </section>
   );
 };

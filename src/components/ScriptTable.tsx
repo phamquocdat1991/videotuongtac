@@ -17,6 +17,10 @@ import {
   Code,
   CheckSquare,
   FileSpreadsheet,
+  ClipboardCheck,
+  PackageCheck,
+  BarChart3,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   InteractionPoint,
@@ -29,6 +33,15 @@ import {
 } from '../types';
 import { MathRenderer } from './MathRenderer';
 
+const getTypeLabelForMatrix = (type: string): string => ({
+  quiz: 'Trắc nghiệm',
+  multi_choice: 'Đa đáp án',
+  true_false: 'Đúng/Sai',
+  drag_drop: 'Kéo thả',
+  fill_blank: 'Điền khuyết',
+  checkpoint_note: 'Tóm tắt',
+}[type] || type);
+
 interface ScriptTableProps {
   interactions: InteractionPoint[];
   onEditInteraction: (point: InteractionPoint) => void;
@@ -40,6 +53,10 @@ interface ScriptTableProps {
   onPreviewStandalone: () => void;
   onCopyHtml: () => void;
   onOpenLmsEmbed: () => void;
+  onReview: () => void;
+  onExportOffline: () => void;
+  isReviewed: boolean;
+  isExportingOffline: boolean;
 }
 
 export const ScriptTable: React.FC<ScriptTableProps> = ({
@@ -53,6 +70,10 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
   onPreviewStandalone,
   onCopyHtml,
   onOpenLmsEmbed,
+  onReview,
+  onExportOffline,
+  isReviewed,
+  isExportingOffline,
 }) => {
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -277,8 +298,14 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
     return '';
   };
 
+  const typeCoverage: Record<string, number> = interactions.reduce((summary: Record<string, number>, point: InteractionPoint) => {
+    summary[point.data.type] = (summary[point.data.type] || 0) + 1;
+    return summary;
+  }, {});
+  const objectiveCoverage = interactions.filter((point) => point.learningObjective?.trim()).length;
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 lg:p-6 shadow-xl flex flex-col gap-5">
+    <section aria-labelledby="script-panel-title" className="flex flex-col gap-5 rounded-3xl border border-white/[0.075] bg-[#0b1627]/95 p-5 shadow-[0_24px_70px_rgba(2,8,23,0.32)] lg:p-6">
       
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3.5">
@@ -288,17 +315,26 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-white">Khu Vực 2: Bảng Kịch Bản Tương Tác Sư Phạm</h2>
+              <h2 id="script-panel-title" className="text-base font-bold text-white">Kịch bản tương tác</h2>
               <span className="px-2 py-0.5 bg-slate-800 text-slate-300 text-xs font-semibold rounded-full border border-slate-700">
                 {interactions.length} điểm dừng
               </span>
             </div>
-            <p className="text-xs text-slate-400">Các điểm dừng tương tác do AI phân tích hoặc giáo viên tùy chỉnh</p>
+            <p className="text-xs text-slate-400">Biên tập nội dung, đáp án và mốc dừng trên video</p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={onReview}
+            className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${isReviewed ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-amber-500/30 bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'}`}
+          >
+            {isReviewed ? <ShieldCheck className="w-4 h-4" /> : <ClipboardCheck className="w-4 h-4" />}
+            <span>{isReviewed ? 'Đã rà soát' : 'Rà soát'}</span>
+          </button>
+
           <button
             type="button"
             onClick={exportCsv}
@@ -328,6 +364,15 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
             <span>Xuất File HTML Tương Tác</span>
           </button>
         </div>
+      </div>
+
+      <div className="grid gap-2 rounded-xl border border-slate-800/80 bg-slate-950/45 p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-200"><BarChart3 className="h-4 w-4 text-cyan-400" /><span>Ma trận bao phủ</span></div>
+        <div className="flex flex-wrap gap-1.5 text-[10px] text-slate-400">
+          {Object.entries(typeCoverage).map(([type, count]) => <span key={type} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1">{getTypeLabelForMatrix(type)}: <strong className="text-slate-200">{count}</strong></span>)}
+          {interactions.length === 0 && <span>Chưa có dữ liệu</span>}
+        </div>
+        <span className={`text-[10px] font-semibold ${objectiveCoverage === interactions.length && interactions.length ? 'text-emerald-300' : 'text-slate-500'}`}>Mục tiêu học tập: {objectiveCoverage}/{interactions.length}</span>
       </div>
 
       {/* Table Container */}
@@ -458,6 +503,16 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
+            onClick={onExportOffline}
+            disabled={isExportingOffline}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-violet-300 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
+            title="Đóng gói HTML, video và thư viện để dùng không mạng"
+          >
+            <PackageCheck className={`w-3.5 h-3.5 ${isExportingOffline ? 'animate-pulse' : ''}`} />
+            <span>{isExportingOffline ? 'Đang đóng gói…' : 'Gói offline'}</span>
+          </button>
+          <button
+            type="button"
             onClick={onOpenLmsEmbed}
             className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-cyan-200 border border-slate-700 rounded-lg transition-colors font-medium flex items-center gap-1.5"
           >
@@ -481,6 +536,6 @@ export const ScriptTable: React.FC<ScriptTableProps> = ({
         </div>
       </div>
 
-    </div>
+    </section>
   );
 };

@@ -65,6 +65,13 @@ export const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({
     }
   }, [isOpen, initialGeminiKey, initialAgentPlatformKey, initialProvider, initialModel]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isOpen, onClose]);
+
   // Khi chuyển tab, tự động cập nhật model tương thích nếu model cũ không thuộc provider mới
   const handleTabChange = (tab: AiProvider) => {
     setActiveTab(tab);
@@ -102,7 +109,7 @@ export const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div role="dialog" aria-modal="true" aria-labelledby="api-settings-title" className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
@@ -111,15 +118,17 @@ export const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Cấu Hình Kết Nối Model AI</h3>
+              <h3 id="api-settings-title" className="text-base font-bold text-white">Cấu Hình Kết Nối Model AI</h3>
               <p className="text-xs text-slate-400">Chọn nhà cung cấp, cấu hình API Key và model xử lý bài giảng</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-100 rounded-lg hover:bg-slate-800 transition-colors"
           >
             <X className="w-5 h-5" />
+            <span className="sr-only">Đóng cài đặt AI</span>
           </button>
         </div>
 
@@ -260,11 +269,11 @@ export const ApiSettingsModal: React.FC<ApiSettingsModalProps> = ({
                 )
               ) : (
                 <span className="text-slate-400">
-                  (Nếu không nhập key, hệ thống sẽ sử dụng thuật toán tạo mẫu sư phạm có sẵn)
+                  Chưa có key — bạn vẫn có thể biên tập thủ công và xuất bài giảng.
                 </span>
               )}
 
-              <span className="text-slate-500">Lưu an toàn tại LocalStorage</span>
+              <span className="text-slate-500">Chỉ giữ trong bộ nhớ tab hiện tại</span>
             </div>
           </div>
 

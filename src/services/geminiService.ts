@@ -1,4 +1,5 @@
-import { InteractionPoint, AiProvider } from '../types';
+import { InteractionPoint, AiProvider, GeminiFileReference, LessonMaterial } from '../types';
+import { validateAndNormalizeInteractions } from '../utils/projectSafety';
 import { generateContentWithFallback, GEMINI_DEFAULT_MODEL } from './aiClientFactory';
 
 export interface GenerateScriptParams {
@@ -8,6 +9,8 @@ export interface GenerateScriptParams {
   videoTitle: string;
   videoDuration: number;
   lessonContent: string;
+  lessonMaterial?: LessonMaterial | null;
+  geminiFileReference?: GeminiFileReference | null;
   subject?: string;
   grade?: string;
   interactionCount?: number;
@@ -24,6 +27,8 @@ export async function generateInteractionsWithGemini(
     videoTitle,
     videoDuration = 180,
     lessonContent,
+    lessonMaterial,
+    geminiFileReference,
     subject = 'Tổng hợp',
     grade = 'THPT',
     interactionCount = 3,
@@ -109,12 +114,16 @@ Hãy tạo đúng ${Math.max(2, Math.min(8, interactionCount))} điểm dừng t
 `;
 
     try {
+      const attachment = geminiFileReference
+        ? { fileData: { fileUri: geminiFileReference.uri, mimeType: geminiFileReference.mimeType } }
+        : lessonMaterial?.inlineData ? { inlineData: lessonMaterial.inlineData } : null;
+      const contents = attachment ? [{ role: 'user', parts: [attachment, { text: userPrompt }] }] : userPrompt;
       const { text, usedModel } = await generateContentWithFallback({
         apiKey,
         provider,
         selectedModel,
         systemInstruction: systemPrompt,
-        contents: userPrompt,
+        contents,
         responseMimeType: 'application/json',
         // Bật thinking mode HIGH cho tác vụ phân tích sư phạm (api.md mục IV)
         // Gemini 3.x: thinking giúp lập bản đồ nội dung chính xác hơn
@@ -128,7 +137,7 @@ Hãy tạo đúng ${Math.max(2, Math.min(8, interactionCount))} điểm dừng t
       const parsed = JSON.parse(cleanJson);
 
       if (Array.isArray(parsed) && parsed.length > 0) {
-        const validatedInteractions: InteractionPoint[] = parsed.map((item, idx) => ({
+        const validatedInteractions: InteractionPoint[] = validateAndNormalizeInteractions(parsed.map((item, idx) => ({
           id: item.id || `point_${Date.now()}_${idx}`,
           timestamp: Math.max(
             5,
@@ -138,8 +147,10 @@ Hãy tạo đúng ${Math.max(2, Math.min(8, interactionCount))} điểm dừng t
             )
           ),
           title: item.title || `Điểm dừng tương tác ${idx + 1}`,
+          learningObjective: item.learningObjective || '',
+          cognitiveLevel: item.cognitiveLevel || 'unclassified',
           data: item.data,
-        }));
+        })), videoDuration);
 
         validatedInteractions.sort((a, b) => a.timestamp - b.timestamp);
         return { interactions: validatedInteractions, usedModel };
