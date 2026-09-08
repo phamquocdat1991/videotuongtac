@@ -487,22 +487,17 @@ export function generateExportHtml(
         bodyHtml += '<div class="text-xs font-bold text-white mb-2">' + renderMath(point.data.instruction) + '</div>' +
           '<div class="grid grid-cols-2 gap-2 mb-3" id="dd-slots">';
         point.data.categories.forEach(cat => {
-          bodyHtml += '<div class="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 min-h-[90px] flex flex-col" data-cat="' + escapeHtml(cat) + '">' +
+          bodyHtml += '<div class="dd-drop-zone bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 min-h-[90px] flex flex-col" data-cat="' + escapeHtml(cat) + '" data-drop-category="' + escapeHtml(cat) + '">' +
             '<div class="text-[11px] font-bold text-violet-300 uppercase mb-1.5 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-violet-400"></span><span>' + renderMath(cat) + '</span></div>' +
             '<div class="slot-items space-y-1 flex-1"></div>' +
             '</div>';
         });
         bodyHtml += '</div><div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">' +
-          '<div class="text-[11px] text-slate-400 font-semibold mb-1.5">Bấm vào thẻ để xếp vào nhóm:</div>' +
+          '<div class="text-[11px] text-slate-400 font-semibold mb-1.5">Nhấn giữ thẻ, kéo và thả vào nhóm phù hợp:</div>' +
           '<div class="flex flex-wrap gap-1.5" id="dd-pool">';
         point.data.items.forEach(it => {
-          bodyHtml += '<div class="relative group/drop" data-item-id="' + escapeHtml(it.id) + '">' +
-            '<span class="inline-block bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-medium px-2.5 py-1 rounded-lg cursor-pointer">' + renderMath(it.text) + '</span>' +
-            '<div class="absolute left-0 bottom-full mb-1 hidden group-hover/drop:flex flex-col bg-slate-900 border border-slate-700 rounded-lg p-1 shadow-xl z-30 whitespace-nowrap min-w-[120px]">';
-          point.data.categories.forEach(cat => {
-            bodyHtml += '<button type="button" class="btn-drop-cat text-left text-[10px] text-violet-300 hover:bg-slate-800 p-1 rounded font-medium" data-cat="' + escapeHtml(cat) + '" data-item-id="' + escapeHtml(it.id) + '">→ ' + escapeHtml(cat) + '</button>';
-          });
-          bodyHtml += '</div></div>';
+          bodyHtml += '<div class="dd-draggable touch-none select-none" draggable="true" data-item-id="' + escapeHtml(it.id) + '">' +
+            '<span class="inline-block bg-slate-800 border border-slate-700 text-slate-200 text-[11px] font-medium px-2.5 py-1.5 rounded-lg cursor-grab active:cursor-grabbing">' + renderMath(it.text) + '</span></div>';
         });
         bodyHtml += '</div></div>';
         footerHtml = '<button id="btn-submit-action" class="bg-violet-600 hover:bg-violet-500 text-white font-bold py-2 px-5 rounded-xl text-xs shadow transition-all cursor-pointer">Kiểm Tra Kéo Thả</button>';
@@ -586,13 +581,40 @@ export function generateExportHtml(
           };
         }
       } else if (point.data.type === 'drag_drop') {
-        document.querySelectorAll('.btn-drop-cat').forEach(b => {
-          b.onclick = (e) => {
-            const itId = b.getAttribute('data-item-id');
-            const cat = b.getAttribute('data-cat');
-            droppedCategories[itId] = cat;
-            renderDragDropState(point);
-          };
+        let draggingItemId = null;
+        document.querySelectorAll('.dd-draggable').forEach(chip => {
+          chip.addEventListener('dragstart', event => {
+            draggingItemId = chip.getAttribute('data-item-id');
+            event.dataTransfer.setData('text/plain', draggingItemId);
+            event.dataTransfer.effectAllowed = 'move';
+          });
+          chip.addEventListener('pointerdown', event => {
+            draggingItemId = chip.getAttribute('data-item-id');
+            chip.setPointerCapture(event.pointerId);
+          });
+          chip.addEventListener('pointerup', event => {
+            const zone = Array.from(document.querySelectorAll('.dd-drop-zone')).find(target => {
+              const rect = target.getBoundingClientRect();
+              return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+            });
+            if (zone && draggingItemId) {
+              droppedCategories[draggingItemId] = zone.getAttribute('data-cat');
+              renderDragDropState(point);
+            }
+            draggingItemId = null;
+          });
+        });
+        document.querySelectorAll('.dd-drop-zone').forEach(zone => {
+          zone.addEventListener('dragover', event => event.preventDefault());
+          zone.addEventListener('drop', event => {
+            event.preventDefault();
+            const itemId = event.dataTransfer.getData('text/plain') || draggingItemId;
+            if (itemId) {
+              droppedCategories[itemId] = zone.getAttribute('data-cat');
+              renderDragDropState(point);
+            }
+            draggingItemId = null;
+          });
         });
         const btnSub = document.getElementById('btn-submit-action');
         if (btnSub) {

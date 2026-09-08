@@ -48,8 +48,9 @@ const DEFAULT_INTERACTIONS: InteractionPoint[] = [
   {
     id: 'point_initial_3', timestamp: 125, title: 'Hoàn thiện phương trình quang hợp',
     learningObjective: 'Vận dụng kiến thức để hoàn thiện phương trình', cognitiveLevel: 'application',
-    data: { type: 'fill_blank', sentence: '$6CO_2 + 6H_2O + \\text{Ánh sáng} \\rightarrow {...} + 6O_2$', blankAnswer: 'C6H12O6',
-      hint: 'Công thức phân tử của đường Glucose', explanation: 'Sản phẩm hữu cơ của quang hợp là đường Glucose ($C_6H_{12}O_6$).' },
+    data: { type: 'quiz', question: 'Sản phẩm hữu cơ trong phương trình quang hợp là chất nào?',
+      options: ['$C_6H_{12}O_6$', '$CO_2$', '$H_2O$', '$O_2$'], correctAnswer: 0,
+      explanation: 'Sản phẩm hữu cơ của quang hợp là đường Glucose ($C_6H_{12}O_6$).' },
   },
 ];
 

@@ -43,13 +43,10 @@ Nhiệm vụ: Phân tích nội dung bài học và độ dài video để tạo
 
 Quy chuẩn sư phạm:
 1. Phân bổ các mốc thời gian (timestamp) đều đặn và hợp lý dọc theo dòng thời gian video (từ 10s đến ${Math.max(20, Math.round(videoDuration - 10))}s).
-2. Đa dạng hóa các loại hình câu hỏi để kích thích tư duy người học:
+2. CHỈ sử dụng đúng 2 loại tương tác sau, không tạo bất kỳ loại nào khác:
    - "quiz": Trắc nghiệm 1 đáp án đúng (có 4 lựa chọn A, B, C, D; correctAnswer là chỉ số 0..3).
-   - "multi_choice": Trắc nghiệm chọn nhiều đáp án đúng (correctAnswers là mảng các chỉ số đúng).
-   - "true_false": Câu nhận định Đúng hoặc Sai (statement kèm isCorrect: true/false).
    - "drag_drop": Hoạt động kéo thả ghép nối/phân loại vào 2-3 nhóm danh mục.
-   - "fill_blank": Điền từ/công thức vào chỗ trống {...}.
-   - "checkpoint_note": Thẻ tóm tắt kiến thức trọng tâm của phân đoạn vừa xem.
+   Phân bổ xen kẽ hợp lý giữa trắc nghiệm và kéo thả. Với kéo thả, học sinh phải nhấn giữ thẻ và kéo đến vùng đích.
 3. Nếu bài giảng thuộc môn Toán học, Vật lý, Hóa học: Luôn viết công thức khoa học trong cặp dấu $...$ (ví dụ: $x^2 + y^2 = 1$, $\\Delta = b^2 - 4ac$, $C_6H_{12}O_6$).
 4. Mọi câu hỏi BẮT BUỘC có lời giải thích (explanation) rõ ràng, mang tính động viên và khắc sâu kiến thức.
 5. Trả về định dạng JSON thuần túy (mảng các điểm dừng tương tác).
@@ -96,18 +93,6 @@ Hãy tạo đúng ${Math.max(2, Math.min(8, interactionCount))} điểm dừng t
         {"id": "d3", "text": "Khái niệm 3", "targetCategory": "Nhóm 1"}
       ],
       "explanation": "Giải thích phân loại chi tiết."
-    }
-  },
-  {
-    "id": "point_3",
-    "timestamp": 120,
-    "title": "Điền khuyết công thức trọng tâm",
-    "data": {
-      "type": "fill_blank",
-      "sentence": "Công thức tính diện tích hình tròn là: S = {...}",
-      "blankAnswer": "\\pi R^2",
-      "hint": "Chứa số Pi và bình phương bán kính",
-      "explanation": "Diện tích hình tròn bán kính R là S = \\pi R^2."
     }
   }
 ]
@@ -393,5 +378,5 @@ Hãy tạo đúng ${Math.max(2, Math.min(8, interactionCount))} điểm dừng t
     ];
   }
 
-  return { interactions: simulatedPoints, usedModel: 'Smart Pedagogical Preset' };
+  return { interactions: validateAndNormalizeInteractions(simulatedPoints, videoDuration), usedModel: 'Smart Pedagogical Preset' };
 }

@@ -305,12 +305,12 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
 
           {validationError && <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-200">{validationError}</div>}
 
-          {/* Type Selector (6 Types) */}
+          {/* Type Selector (2 Types) */}
           <div>
             <label className="block text-slate-300 font-semibold mb-1.5">
               Loại hoạt động tương tác sư phạm:
             </label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-700">
+            <div className="grid grid-cols-2 gap-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-700">
               <button
                 type="button"
                 onClick={() => setType('quiz')}
@@ -322,48 +322,12 @@ export const EditInteractionModal: React.FC<EditInteractionModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setType('multi_choice')}
-                className={`py-1.5 px-2 rounded-lg font-medium text-[11px] transition-all ${
-                  type === 'multi_choice' ? 'bg-blue-600 text-white shadow font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Đa đáp án
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('true_false')}
-                className={`py-1.5 px-2 rounded-lg font-medium text-[11px] transition-all ${
-                  type === 'true_false' ? 'bg-teal-600 text-white shadow font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Đúng / Sai
-              </button>
-              <button
-                type="button"
                 onClick={() => setType('drag_drop')}
                 className={`py-1.5 px-2 rounded-lg font-medium text-[11px] transition-all ${
                   type === 'drag_drop' ? 'bg-violet-600 text-white shadow font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
                 Kéo thả
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('fill_blank')}
-                className={`py-1.5 px-2 rounded-lg font-medium text-[11px] transition-all ${
-                  type === 'fill_blank' ? 'bg-amber-600 text-white shadow font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Điền từ
-              </button>
-              <button
-                type="button"
-                onClick={() => setType('checkpoint_note')}
-                className={`py-1.5 px-2 rounded-lg font-medium text-[11px] transition-all ${
-                  type === 'checkpoint_note' ? 'bg-emerald-600 text-white shadow font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Thẻ tóm tắt
               </button>
             </div>
           </div>
