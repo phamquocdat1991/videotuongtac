@@ -179,20 +179,21 @@ export const parseApiError = (error: any): { type: ApiErrorType; message: string
   const serialized = JSON.stringify(error) || '';
   const lower = (message + ' ' + serialized).toLowerCase();
 
-  // 1. Quota / Rate limit (429) → Phải dừng ngay, KHÔNG đánh dấu key invalid!
+  // 1. Timeout / Request quá lâu → Fallback model!
   if (
-    lower.includes('429') ||
-    lower.includes('resource_exhausted') ||
-    lower.includes('quota') ||
-    lower.includes('rate limit')
+    error?.name === 'AbortError' ||
+    error?.name === 'TimeoutError' ||
+    lower.includes('timeout') ||
+    lower.includes('timed out') ||
+    lower.includes('aborted')
   ) {
     return {
-      type: 'QUOTA_EXHAUSTED',
-      message: 'Đã hết hạn mức (Quota) hoặc vượt giới hạn tốc độ API. Vui lòng đổi API key hoặc đợi vài phút.',
+      type: 'MODEL_OVERLOADED',
+      message: 'Model AI phản hồi chậm / nghẽn mạng quá thời gian chờ; hệ thống đang tự động chuyển model dự phòng...',
     };
   }
 
-  // 2. Model Quá tải / Tạm không khả dụng (503, 500, 504) → Fallback model!
+  // 2. Model Quá tải / Tạm không khả dụng (503, 500, 504) hoặc Rate Limit (429) → Cho phép Fallback model!
   if (
     lower.includes('503') ||
     lower.includes('500') ||
@@ -202,15 +203,26 @@ export const parseApiError = (error: any): { type: ApiErrorType; message: string
     lower.includes('overloaded') ||
     lower.includes('temporarily unavailable') ||
     lower.includes('deadline_exceeded') ||
-    lower.includes('try again later')
+    lower.includes('try again later') ||
+    lower.includes('rate_limit') ||
+    lower.includes('rate limit') ||
+    lower.includes('resource_exhausted')
   ) {
     return {
       type: 'MODEL_OVERLOADED',
-      message: 'Model AI đang quá tải trên máy chủ Google; hệ thống đang tự động thử model dự phòng...',
+      message: 'Model AI đang quá tải hoặc chạm giới hạn tốc độ; hệ thống đang tự động thử model dự phòng...',
     };
   }
 
-  // 3. Endpoint / Model không tồn tại (404) → Fallback model!
+  // 3. Quota dự án cạn kiệt hoàn toàn (Daily Quota Exceeded)
+  if (lower.includes('quota_exceeded') || lower.includes('quota exceeded')) {
+    return {
+      type: 'QUOTA_EXHAUSTED',
+      message: 'Đã hết hạn mức ngày (Daily Quota) của tài khoản Google AI. Vui lòng đổi API key khác.',
+    };
+  }
+
+  // 4. Endpoint / Model không tồn tại (404) → Fallback model!
   if (lower.includes('404') || lower.includes('not_found')) {
     return {
       type: 'NOT_FOUND',
@@ -342,11 +354,22 @@ export const generateContentWithFallback = async (
         config.thinkingConfig = { thinkingLevel: 'HIGH' };
       }
 
-      const response = await ai.models.generateContent({
-        model: currentModel,
-        contents: contents,
-        config,
-      });
+      // Tích hợp Latency Timeout per attempt (gemini-resilience-gateway standard)
+      const attemptTimeout = currentModel.includes('lite') ? 6000 : currentModel.includes('3.8') ? 10000 : 8000;
+      const controller = new AbortController();
+      const timeoutHandle = setTimeout(() => controller.abort(new Error(`Timeout sau ${attemptTimeout}ms`)), attemptTimeout);
+      config.abortSignal = controller.signal;
+
+      let response: any;
+      try {
+        response = await ai.models.generateContent({
+          model: currentModel,
+          contents: contents,
+          config,
+        });
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
 
       const responseText = response.text || '';
       return { text: responseText, usedModel: currentModel };
