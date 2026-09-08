@@ -76,14 +76,31 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
   const docInputRef = useRef<HTMLInputElement>(null);
 
   const subjectsList = [
+    'Tất cả các môn',
+    'Tiếng Việt',
+    'Ngữ văn',
     'Sinh học',
     'Toán học',
     'Vật lý',
     'Hóa học',
     'Tiếng Anh',
+    'Ngoại ngữ khác',
+    'Lịch sử',
+    'Địa lý',
     'Lịch sử & Địa lý',
-    'Ngữ văn',
+    'Khoa học',
+    'Khoa học tự nhiên',
+    'Công nghệ',
     'Tin học',
+    'Giáo dục công dân',
+    'Giáo dục kinh tế và pháp luật',
+    'Đạo đức',
+    'Tự nhiên và Xã hội',
+    'Hoạt động trải nghiệm',
+    'Giáo dục thể chất',
+    'Âm nhạc',
+    'Mỹ thuật',
+    'Giáo dục quốc phòng và an ninh',
     'Kỹ năng sống',
   ];
 
@@ -202,17 +219,17 @@ export const UploadSection: React.FC<UploadSectionProps> = ({
             <BookOpen className="w-3 h-3 text-indigo-400" />
             <span>Môn học:</span>
           </label>
-          <select
+          <input
+            list="subjects-list"
             value={subject}
             onChange={(e) => onSubjectChange(e.target.value)}
+            placeholder="Chọn hoặc nhập tên môn học"
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
-          >
-            {subjectsList.map((s, i) => (
-              <option key={i} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          />
+          <datalist id="subjects-list">
+            {subjectsList.map((s) => <option key={s} value={s} />)}
+          </datalist>
+          <p className="mt-1 text-[10px] text-slate-500">Có thể tự nhập bất kỳ môn học nào.</p>
         </div>
 
         <div>

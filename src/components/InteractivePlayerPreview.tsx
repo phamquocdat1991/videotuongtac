@@ -60,6 +60,7 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
   const [selectedTrueFalse, setSelectedTrueFalse] = useState<boolean | null>(null);
   // 4. Drag & Drop
   const [droppedCategories, setDroppedCategories] = useState<{ [itemId: string]: string }>({});
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   // 5. Fill Blank
   const [fillBlankInput, setFillBlankInput] = useState<string>('');
   const [showHint, setShowHint] = useState<boolean>(false);
@@ -302,6 +303,22 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
         text: `Bạn đã xếp đúng ${correctCount}/${dd.items.length} thẻ. Thử lại nhé!`,
       });
     }
+  };
+
+  const placeDraggedItem = (itemId: string, category: string) => {
+    setDroppedCategories((current) => ({ ...current, [itemId]: category }));
+    setDraggingItemId(null);
+  };
+
+  const finishPointerDrag = (event: React.PointerEvent<HTMLElement>, itemId: string) => {
+    const targets = Array.from(document.querySelectorAll<HTMLElement>('[data-drop-category]'));
+    const target = targets.find((element) => {
+      const rect = element.getBoundingClientRect();
+      return event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+    });
+    const category = target?.dataset.dropCategory;
+    if (category) placeDraggedItem(itemId, category);
+    else setDraggingItemId(null);
   };
 
   // 5. Submit Fill Blank
@@ -566,7 +583,17 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
                   {/* Category slots */}
                   <div className="grid grid-cols-2 gap-2">
                     {(activeModalPoint.data as DragDropInteraction).categories.map((cat, idx) => (
-                      <div key={idx} className="bg-slate-800/80 border border-slate-700 rounded-xl p-2.5 min-h-[90px] flex flex-col">
+                      <div
+                        key={idx}
+                        data-drop-category={cat}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const itemId = event.dataTransfer.getData('text/plain') || draggingItemId;
+                          if (itemId) placeDraggedItem(itemId, cat);
+                        }}
+                        className={`bg-slate-800/80 border rounded-xl p-2.5 min-h-[90px] flex flex-col transition-colors ${draggingItemId ? 'border-violet-400 bg-violet-950/30' : 'border-slate-700'}`}
+                      >
                         <div className="text-[11px] font-bold text-violet-300 uppercase mb-1.5 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-violet-400"></span>
                           <span><MathRenderer content={cat} inline /></span>
@@ -601,34 +628,32 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
                   {/* Available Items Pool */}
                   <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                     <div className="text-[11px] text-slate-400 font-semibold mb-1.5">
-                      Nhấp vào thẻ để chọn xếp vào danh mục:
+                      Nhấn giữ thẻ, kéo và thả vào nhóm phù hợp:
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {(activeModalPoint.data as DragDropInteraction).items
                         .filter((it) => !droppedCategories[it.id])
                         .map((it) => (
-                          <div key={it.id} className="relative group/drop">
-                            <span className="inline-block bg-slate-800 border border-slate-700 text-slate-200 hover:border-violet-500 text-[11px] font-medium px-2.5 py-1 rounded-lg cursor-pointer">
+                          <div
+                            key={it.id}
+                            draggable
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData('text/plain', it.id);
+                              event.dataTransfer.effectAllowed = 'move';
+                              setDraggingItemId(it.id);
+                            }}
+                            onDragEnd={() => setDraggingItemId(null)}
+                            onPointerDown={(event) => {
+                              event.currentTarget.setPointerCapture(event.pointerId);
+                              setDraggingItemId(it.id);
+                            }}
+                            onPointerUp={(event) => finishPointerDrag(event, it.id)}
+                            onPointerCancel={() => setDraggingItemId(null)}
+                            className={`touch-none select-none ${draggingItemId === it.id ? 'opacity-60 scale-95' : ''}`}
+                          >
+                            <span className="inline-block bg-slate-800 border border-slate-700 text-slate-200 hover:border-violet-500 text-[11px] font-medium px-2.5 py-1.5 rounded-lg cursor-grab active:cursor-grabbing">
                               <MathRenderer content={it.text} inline />
                             </span>
-                            {/* Fast Drop Menu */}
-                            <div className="absolute left-0 bottom-full mb-1 hidden group-hover/drop:flex flex-col bg-slate-900 border border-slate-700 rounded-lg p-1 shadow-xl z-30 whitespace-nowrap min-w-[120px]">
-                              {(activeModalPoint.data as DragDropInteraction).categories.map((cat, cIdx) => (
-                                <button
-                                  key={cIdx}
-                                  type="button"
-                                  onClick={() =>
-                                    setDroppedCategories({
-                                      ...droppedCategories,
-                                      [it.id]: cat,
-                                    })
-                                  }
-                                  className="text-left text-[10px] text-violet-300 hover:bg-slate-800 p-1 rounded font-medium"
-                                >
-                                  → {cat}
-                                </button>
-                              ))}
-                            </div>
                           </div>
                         ))}
                     </div>

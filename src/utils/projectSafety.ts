@@ -46,6 +46,34 @@ export function sanitizeFileName(value: string, fallback = 'bai_giang'): string 
 
 export function sanitizeInteraction(point: InteractionPoint, index: number, duration = 0): InteractionPoint {
   const maximum = duration > 10 ? Math.max(5, Math.round(duration - 5)) : Number.MAX_SAFE_INTEGER;
+  const rawData = point.data as any;
+  const data = rawData?.type === 'drag_drop'
+    ? {
+        type: 'drag_drop' as const,
+        instruction: String(rawData.instruction || 'Kéo các thẻ vào đúng nhóm.'),
+        categories: Array.isArray(rawData.categories) ? rawData.categories.map(String).filter(Boolean) : [],
+        items: Array.isArray(rawData.items) ? rawData.items.map((item: any, itemIndex: number) => ({
+          id: String(item?.id || `item_${itemIndex + 1}`),
+          text: String(item?.text || ''),
+          targetCategory: String(item?.targetCategory || ''),
+        })).filter((item: any) => item.text) : [],
+        explanation: String(rawData.explanation || ''),
+      }
+    : rawData?.type === 'quiz'
+      ? {
+          type: 'quiz' as const,
+          question: String(rawData.question || ''),
+          options: Array.isArray(rawData.options) ? rawData.options.map(String).filter(Boolean) : [],
+          correctAnswer: Number.isInteger(rawData.correctAnswer) ? rawData.correctAnswer : 0,
+          explanation: String(rawData.explanation || ''),
+        }
+      : {
+          type: 'quiz' as const,
+          question: String(rawData?.question || rawData?.statement || rawData?.sentence || rawData?.title || 'Nội dung trọng tâm của phần vừa xem là gì?'),
+          options: ['Đáp án đúng theo nội dung bài học', 'Phương án chưa chính xác', 'Phương án không liên quan', 'Không có đáp án đúng'],
+          correctAnswer: 0,
+          explanation: String(rawData?.explanation || rawData?.summary || 'Hãy đối chiếu lại nội dung bài học để củng cố kiến thức.'),
+        };
   return {
     ...structuredClone(point),
     id: String(point.id || `point_${Date.now()}_${index}`),
@@ -54,6 +82,7 @@ export function sanitizeInteraction(point: InteractionPoint, index: number, dura
     learningObjective: point.learningObjective?.trim() || undefined,
     cognitiveLevel: ['unclassified', 'recognition', 'understanding', 'application'].includes(point.cognitiveLevel || '') ? point.cognitiveLevel : 'unclassified',
     completed: undefined,
+    data,
   };
 }
 
