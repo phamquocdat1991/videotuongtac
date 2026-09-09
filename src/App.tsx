@@ -212,27 +212,45 @@ export default function App() {
       {toastMessage && <div role="status" aria-live="polite" className={`fixed bottom-5 left-1/2 z-[60] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-2xl border px-4 py-3 text-xs font-semibold shadow-2xl backdrop-blur-xl sm:left-auto sm:right-6 sm:translate-x-0 ${toastMessage.type === 'warn' ? 'border-rose-400/30 bg-rose-950/95 text-rose-100' : toastMessage.type === 'info' ? 'border-cyan-400/30 bg-slate-900/95 text-cyan-100' : 'border-emerald-400/30 bg-slate-900/95 text-white'}`}>{toastMessage.type === 'warn' ? <AlertCircle className="h-4 w-4 text-rose-300" /> : toastMessage.type === 'info' ? <Info className="h-4 w-4 text-cyan-300" /> : <Check className="h-4 w-4 text-emerald-300" />}<span>{toastMessage.text}</span></div>}
 
       <main className="mx-auto flex w-full max-w-[1560px] flex-1 flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <section className="flex flex-col gap-3 rounded-3xl border border-blue-100 bg-gradient-to-r from-white via-blue-50/70 to-indigo-50/70 px-5 py-5 shadow-[0_20px_55px_rgba(30,64,175,0.07)] sm:flex-row sm:items-end sm:justify-between">
-          <div><div className="mb-2 flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-blue-600"><Sparkles className="h-3.5 w-3.5" />Academic Workspace</div><h2 className="max-w-3xl text-xl font-extrabold tracking-tight text-slate-950 sm:text-2xl">Thiết kế trải nghiệm học tập rõ ràng, trực quan</h2><p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600">Video ở trung tâm, quy trình bên trái và toàn bộ công cụ biên tập ở bên phải.</p></div>
-          <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] text-slate-600 shadow-sm"><Cloud className="h-3.5 w-3.5 text-emerald-600" />{saveLabel}</span><span className="rounded-full border border-blue-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-blue-700 shadow-sm">{subject} · {grade}</span></div>
+        <section className="sunrise-welcome" aria-labelledby="welcome-title">
+          <div className="sunrise-welcome-copy">
+            <span className="sunrise-eyebrow"><Sparkles size={16} /> Mỗi bài giảng, một hành trình khám phá</span>
+            <h2 id="welcome-title">Chào ngày mới,<br /><em>người gieo cảm hứng!</em></h2>
+            <p>Biến những thước phim thành bài học để học sinh cùng khám phá, suy nghĩ và tương tác.</p>
+            <div className="sunrise-welcome-meta"><span><Cloud size={15} />{saveLabel}</span><span>{subject} · {grade}</span></div>
+          </div>
+        </section>
+        <section className="sunrise-stats" aria-label="Bài giảng hiện tại">
+          <div><span className="sunrise-stat-icon"><Sparkles size={23} /></span><p>Điểm tương tác<strong>{interactions.length} <small>mốc</small></strong></p></div>
+          <div><span className="sunrise-stat-icon"><Check size={23} /></span><p>Dạng hoạt động<strong>{new Set(interactions.map(point => point.data.type)).size} <small>dạng</small></strong></p></div>
+          <div><span className="sunrise-stat-icon"><Info size={23} /></span><p>Thời lượng video<strong>{Math.floor(videoDuration / 60)}:{String(Math.round(videoDuration % 60)).padStart(2, '0')} <small>phút:giây</small></strong></p></div>
+          <div><span className="sunrise-stat-icon"><Cloud size={23} /></span><p>Rà soát nội dung<strong className="sunrise-review-status">{isReviewed ? 'Đã rà soát' : 'Chờ rà soát'}</strong></p></div>
         </section>
 
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-12 xl:items-start">
-          <aside className="flex flex-col gap-4 xl:sticky xl:top-[84px] xl:col-span-2">
+          <aside className="sunrise-sidebar flex flex-col gap-4 xl:sticky xl:top-[84px] xl:col-span-2">
+            <nav aria-label="Không gian bài giảng" className="sunrise-navigation">
+              <a href="#welcome-title">Tổng quan</a>
+              <button onClick={() => setIsProjectManagerOpen(true)}>Dự án video</button>
+              <a href="#lesson-source">Video & học liệu</a>
+              <a href="#interaction-editor">Câu hỏi tương tác</a>
+              <button onClick={() => requestReviewedAction()}>Rà soát & xuất bản</button>
+              <button onClick={() => setIsApiSettingsOpen(true)}>Cài đặt AI</button>
+            </nav>
             <WorkflowRail hasSource={Boolean(videoUrl || videoFile)} interactionCount={interactions.length} isReviewed={isReviewed} saveLabel={saveLabel} />
             <section className="hidden rounded-3xl border border-blue-100 bg-blue-50/70 p-4 xl:block"><div className="flex items-center gap-2 text-xs font-extrabold text-blue-800"><Info className="h-4 w-4" />Gợi ý thao tác</div><p className="mt-2 text-[11px] leading-relaxed text-slate-600">Chọn một mốc trong kịch bản để xem đúng vị trí trên video. Hãy rà soát trước khi xuất HTML hoặc LMS.</p></section>
           </aside>
-          <div className="flex min-w-0 flex-col gap-5 xl:col-span-5">
+          <div id="lesson-source" className="flex min-w-0 flex-col gap-5 xl:col-span-5">
             <InteractivePlayerPreview videoUrl={videoUrl} videoFileName={videoFileName} interactions={interactions} seekTimestampTarget={seekTimestampTarget} onDurationDetected={setVideoDuration} />
             <UploadSection apiKey={activeApiKey} provider={provider} selectedModel={selectedModel} onOpenApiSettings={() => setIsApiSettingsOpen(true)} videoFileName={videoFileName} videoUrl={videoUrl} videoDuration={videoDuration} onVideoSelected={handleVideoSelected} lessonMaterial={lessonMaterial} onLessonMaterialChange={setLessonMaterial} onLessonFileChange={setLessonFile} lessonText={lessonText} onLessonTextChange={setLessonText} subject={subject} onSubjectChange={setSubject} grade={grade} onGradeChange={setGrade} isAnalyzing={isAnalyzing} onAnalyze={handleAIAnalyze} />
           </div>
-          <div className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[84px] xl:col-span-5">
+          <div id="interaction-editor" className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[84px] xl:col-span-5">
             <ScriptTable interactions={interactions} onEditInteraction={(point) => { setEditingPoint(point); setIsEditModalOpen(true); }} onDeleteInteraction={handleDeleteInteraction} onDuplicateInteraction={handleDuplicateInteraction} onAddNewInteraction={handleAddNewInteraction} onSeekToTimestamp={handleSeek} onExportHtml={() => requestReviewedAction(performExportHtml)} onPreviewStandalone={() => requestReviewedAction(performPreview)} onCopyHtml={() => requestReviewedAction(performCopyHtml)} onOpenLmsEmbed={requestLms} onReview={() => requestReviewedAction()} onExportOffline={() => requestReviewedAction(() => void performOfflineExport())} isReviewed={isReviewed} isExportingOffline={isExportingOffline} />
           </div>
         </div>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white/70 px-6 py-5 text-[11px] text-slate-500"><div className="mx-auto flex max-w-[1480px] flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><span>Interactive Video Studio · Academic Workspace v2.8</span><span>Thiết kế bởi <strong className="text-slate-700">PHẠM QUỐC ĐẠT</strong> · Zalo 0705350000</span></div></footer>
+      <footer className="border-t border-slate-200 bg-white/70 px-6 py-5 text-[11px] text-slate-500"><div className="mx-auto flex max-w-[1480px] flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"><span>Video tương tác AI · Mỗi bài giảng là một cơ hội thắp sáng</span><span>Thiết kế bởi <strong className="text-slate-700">PHẠM QUỐC ĐẠT</strong> · Zalo 0705350000</span></div></footer>
 
       {pendingDeleteId && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm"><section role="dialog" aria-modal="true" aria-labelledby="delete-interaction-title" className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl"><div className="flex items-start gap-3"><div className="grid h-10 w-10 flex-none place-items-center rounded-2xl bg-rose-50 text-rose-600"><AlertCircle className="h-5 w-5" /></div><div><h2 id="delete-interaction-title" className="text-sm font-extrabold text-slate-900">Xóa điểm tương tác?</h2><p className="mt-1 text-xs leading-relaxed text-slate-500">Mốc này sẽ bị xóa khỏi kịch bản hiện tại. Bạn vẫn có thể khôi phục từ phiên bản đã lưu.</p></div></div><div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setPendingDeleteId(null)} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">Hủy</button><button type="button" onClick={confirmDeleteInteraction} className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-rose-200 hover:bg-rose-500">Xóa mốc</button></div></section></div>}
 

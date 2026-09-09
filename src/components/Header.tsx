@@ -8,8 +8,8 @@ export const Header: React.FC<HeaderProps> = ({ authorName = 'PHẠM QUỐC Đ�
   <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/90 shadow-[0_8px_30px_rgba(15,23,42,0.04)] backdrop-blur-xl">
     <div className="mx-auto flex max-w-[1480px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="grid h-10 w-10 flex-none place-items-center rounded-[14px] bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 shadow-lg shadow-blue-200"><Sparkles className="h-5 w-5 text-white" aria-hidden="true" /></div>
-        <div className="min-w-0"><div className="flex items-center gap-2"><h1 className="truncate text-sm font-extrabold tracking-tight text-slate-950 sm:text-base">AI Interactive Video Studio</h1><span className="hidden rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 sm:inline">v2.8</span></div><p className="truncate text-[11px] text-slate-500">Không gian thiết kế bài học dành cho giáo viên</p></div>
+        <div className="grid h-10 w-10 flex-none place-items-center rounded-[14px] sunrise-brand-icon shadow-lg shadow-blue-200"><Sparkles className="h-5 w-5 text-white" aria-hidden="true" /></div>
+        <div className="min-w-0"><div className="flex items-center gap-2"><h1 className="truncate text-sm font-extrabold tracking-tight text-slate-950 sm:text-base">Video tương tác AI</h1><span className="hidden rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 sm:inline">v2.8</span></div><p className="truncate text-[11px] text-slate-500">Cùng gieo những ý tưởng, cùng nuôi những ước mơ</p></div>
       </div>
       <nav aria-label="Công cụ dự án" className="flex w-full items-center gap-2 overflow-x-auto pb-0.5 md:w-auto md:overflow-visible">
         <button type="button" onClick={onOpenProjectManager} className={actionClass}><FolderOpen className="h-4 w-4 text-amber-600" /><span>Dự án</span></button>
