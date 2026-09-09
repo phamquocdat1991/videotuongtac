@@ -1,3 +1,6 @@
+import { CharacterStudio } from './components/CharacterStudio';
+import { defaultCharacters, normalizeCharacters } from './utils/characters';
+import { CharacterProfile } from './types';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, Check, Cloud, Info, Key, Sparkles, XCircle } from 'lucide-react';
 import { ApiSettingsModal } from './components/ApiSettingsModal';
@@ -63,6 +66,7 @@ export default function App() {
   const [provider, setProvider] = useState<AiProvider>(() => (localStorage.getItem(STORAGE_KEYS.PROVIDER) as AiProvider) || 'gemini');
   const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem(STORAGE_KEYS.MODEL) || GEMINI_DEFAULT_MODEL);
 
+  const [characters, setCharacters] = useState<CharacterProfile[]>(()=>structuredClone(defaultCharacters));
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4');
   const [videoFileName, setVideoFileName] = useState('sinh_hoc_quang_hop.mp4');
@@ -95,10 +99,10 @@ export default function App() {
   const activeApiKey = provider === 'gemini' ? geminiApiKey : agentPlatformApiKey;
   const hasValidApiKey = isValidGoogleAiApiKey(activeApiKey);
   const project = useMemo(() => createSafeProject({
-    videoTitle: videoFileName.replace(/\.[^/.]+$/, ''), videoUrl: videoFile ? '' : videoUrl, videoFileName, videoDuration,
+    characters, videoTitle: videoFileName.replace(/\.[^/.]+$/, ''), videoUrl: videoFile ? '' : videoUrl, videoFileName, videoDuration,
     subject, grade, lessonMaterial, lessonText, interactions,
     settings: { provider, selectedModel, authorName: 'PHẠM QUỐC ĐẠT', authorZalo: '0705350000', allowSeekingPastUnanswered: false, passingScorePercent: 80 },
-  }), [videoFileName, videoUrl, videoFile, videoDuration, subject, grade, lessonMaterial, lessonText, interactions, provider, selectedModel]);
+  }), [characters, videoFileName, videoUrl, videoFile, videoDuration, subject, grade, lessonMaterial, lessonText, interactions, provider, selectedModel]);
   const fingerprint = useMemo(() => projectFingerprint(project), [project]);
   const isReviewed = reviewedFingerprint === fingerprint;
 
@@ -109,6 +113,7 @@ export default function App() {
   };
 
   const handleLoadProject = (next: ProjectData) => {
+    setCharacters(normalizeCharacters(next.characters));
     setVideoFile(null); setLessonFile(null); setVideoFileName(next.videoFileName || `${next.videoTitle || 'video_bai_giang'}.mp4`);
     setVideoUrl(next.videoUrl || ''); setVideoDuration(next.videoDuration || 180); setSubject(next.subject || 'Tổng hợp'); setGrade(next.grade || 'THPT');
     setLessonText(next.lessonText || ''); setLessonMaterial(next.lessonMaterial || null);
@@ -234,6 +239,7 @@ export default function App() {
               <button onClick={() => setIsProjectManagerOpen(true)}>Dự án video</button>
               <a href="#lesson-source">Video & học liệu</a>
               <a href="#interaction-editor">Câu hỏi tương tác</a>
+              <a href="#characters">Nhân vật & giọng nói</a>
               <button onClick={() => requestReviewedAction()}>Rà soát & xuất bản</button>
               <button onClick={() => setIsApiSettingsOpen(true)}>Cài đặt AI</button>
             </nav>
@@ -242,6 +248,7 @@ export default function App() {
           </aside>
           <div id="lesson-source" className="flex min-w-0 flex-col gap-5 xl:col-span-5">
             <InteractivePlayerPreview videoUrl={videoUrl} videoFileName={videoFileName} interactions={interactions} seekTimestampTarget={seekTimestampTarget} onDurationDetected={setVideoDuration} />
+            <CharacterStudio characters={characters} onChange={next=>{setCharacters(next);setInteractions(previous=>previous.map(point=>{const c=next.find(c=>c.id===point.narration?.characterId);return c && point.narration ? {...point,narration:{...point.narration,name:c.name,voiceURI:c.voiceURI,lang:c.lang,rate:c.rate,pitch:c.pitch}} : point}));}} interactions={interactions} onAssign={(id,narration)=>setInteractions(previous=>previous.map(point=>point.id===id?{...point,narration}:point))} />
             <UploadSection apiKey={activeApiKey} provider={provider} selectedModel={selectedModel} onOpenApiSettings={() => setIsApiSettingsOpen(true)} videoFileName={videoFileName} videoUrl={videoUrl} videoDuration={videoDuration} onVideoSelected={handleVideoSelected} lessonMaterial={lessonMaterial} onLessonMaterialChange={setLessonMaterial} onLessonFileChange={setLessonFile} lessonText={lessonText} onLessonTextChange={setLessonText} subject={subject} onSubjectChange={setSubject} grade={grade} onGradeChange={setGrade} isAnalyzing={isAnalyzing} onAnalyze={handleAIAnalyze} />
           </div>
           <div id="interaction-editor" className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-[84px] xl:col-span-5">

@@ -517,6 +517,28 @@ export function generateExportHtml(
       }
 
       modalBody.innerHTML = bodyHtml;
+      if (point.narration && point.narration.text) {
+        const n = point.narration;
+        const box = document.createElement('aside'); box.className = 'mb-4 p-3 rounded-xl bg-slate-800 text-white';
+        const name = document.createElement('strong'); name.textContent = n.name;
+        const text = document.createElement('p'); text.textContent = n.text;
+        const play = document.createElement('button'); play.textContent = 'Nghe lời dẫn'; play.className = 'border rounded p-2 mr-2 mt-2';
+        const stop = document.createElement('button'); stop.textContent = 'Dừng lời dẫn'; stop.className = 'border rounded p-2';
+        const status = document.createElement('p'); status.setAttribute('role','status');
+        play.onclick = function() {
+          if (!('speechSynthesis' in window)) { status.textContent = 'Thiết bị chưa hỗ trợ giọng đọc.'; return; }
+          const synth = window.speechSynthesis;
+          const voices = synth.getVoices();
+          const voice = voices.find(v => v.voiceURI === n.voiceURI) || voices.find(v => v.lang.startsWith(n.lang.slice(0,2)));
+          if (!voice) { status.textContent = 'Chưa có giọng phù hợp. Em có thể đọc lời dẫn.'; return; }
+          synth.cancel(); const utterance = new SpeechSynthesisUtterance(n.text);
+          utterance.voice = voice; utterance.lang = voice.lang; utterance.rate = n.rate; utterance.pitch = n.pitch;
+          utterance.onerror = function() { status.textContent = 'Không phát được giọng đọc.'; };
+          synth.speak(utterance);
+        };
+        stop.onclick = function() { if ('speechSynthesis' in window) window.speechSynthesis.cancel(); };
+        box.append(name,text,play,stop,status); modalBody.prepend(box);
+      }
       modalFooter.innerHTML = footerHtml;
       interactionOverlay.classList.remove('hidden');
 
@@ -687,6 +709,7 @@ export function generateExportHtml(
 
     function closeModalAndResume() {
       interactionOverlay.classList.add('hidden');
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       activeInteraction = null;
       video.play().catch(()=>{});
       updatePlayIcon(true);

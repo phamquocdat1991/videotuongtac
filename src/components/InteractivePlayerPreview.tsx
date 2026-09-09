@@ -1,3 +1,4 @@
+import { NarrationPlayer } from './NarrationPlayer';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Play,
@@ -433,6 +434,7 @@ export const InteractivePlayerPreview: React.FC<InteractivePlayerPreviewProps> =
           <div className="absolute inset-0 z-20 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-slate-700/90 rounded-2xl p-5 max-w-lg w-full shadow-2xl overflow-y-auto max-h-[94%] custom-scrollbar animate-in zoom-in-95 duration-150">
               
+              {activeModalPoint.narration?.text && <NarrationPlayer narration={activeModalPoint.narration} />}
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
                 <div className="flex items-center gap-2">

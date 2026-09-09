@@ -78,6 +78,7 @@ export type InteractionData =
   | CheckpointNoteInteraction;
 
 export interface InteractionPoint {
+  narration?: { characterId: string; name: string; text: string; voiceURI: string; lang: string; rate: number; pitch: number };
   id: string;
   timestamp: number; // seconds
   title: string;
@@ -130,6 +131,7 @@ export interface AppSettings {
 }
 
 export interface ProjectData {
+  characters?: CharacterProfile[];
   version: string;
   videoTitle: string;
   videoUrl: string;
@@ -142,4 +144,15 @@ export interface ProjectData {
   interactions: InteractionPoint[];
   settings: AppSettings;
   lastUpdated: string;
+}
+
+export interface CharacterProfile {
+  id: string;
+  name: string;
+  role: 'teacher' | 'boy' | 'girl' | 'robot';
+  description: string;
+  voiceURI: string;
+  lang: string;
+  rate: number;
+  pitch: number;
 }

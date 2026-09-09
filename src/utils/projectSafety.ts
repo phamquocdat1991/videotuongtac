@@ -1,4 +1,5 @@
-import { AppSettings, InteractionPoint, LessonMaterial, ProjectData } from '../types';
+import { AppSettings, InteractionPoint, LessonMaterial, ProjectData, CharacterProfile } from '../types';
+import { normalizeCharacters, normalizeNarration } from './characters';
 
 export const PROJECT_VERSION = '2.8';
 export const MAX_VIDEO_BYTES = 250 * 1024 * 1024;
@@ -82,6 +83,7 @@ export function sanitizeInteraction(point: InteractionPoint, index: number, dura
     learningObjective: point.learningObjective?.trim() || undefined,
     cognitiveLevel: ['unclassified', 'recognition', 'understanding', 'application'].includes(point.cognitiveLevel || '') ? point.cognitiveLevel : 'unclassified',
     completed: undefined,
+    narration: normalizeNarration(point.narration),
     data,
   };
 }
@@ -98,6 +100,7 @@ export function validateAndNormalizeInteractions(value: unknown, duration = 0): 
 }
 
 export interface ProjectDraft {
+  characters?: CharacterProfile[];
   videoTitle: string; videoUrl: string; videoFileName: string; videoDuration: number; subject: string; grade: string;
   lessonMaterial: LessonMaterial | null; lessonText: string; interactions: InteractionPoint[]; settings: AppSettings;
 }
@@ -113,6 +116,7 @@ export function createSafeProject(draft: ProjectDraft): ProjectData {
   } : null;
   return {
     version: PROJECT_VERSION, videoTitle: String(draft.videoTitle || 'Bài giảng tương tác'),
+    characters: normalizeCharacters(draft.characters),
     videoUrl: draft.videoUrl.startsWith('blob:') ? '' : draft.videoUrl,
     videoFileName: String(draft.videoFileName || 'video_bai_giang.mp4'), videoDuration: Math.max(0, Number(draft.videoDuration) || 0),
     subject: String(draft.subject || 'Tổng hợp'), grade: String(draft.grade || 'THPT'), lessonMaterial,
@@ -127,6 +131,7 @@ export function parseProjectJson(text: string): ProjectData {
   const parsed = JSON.parse(text) as Partial<ProjectData>;
   if (!parsed || !Array.isArray(parsed.interactions)) throw new Error('File không có danh sách điểm tương tác hợp lệ.');
   return createSafeProject({
+    characters: normalizeCharacters(parsed.characters),
     videoTitle: String(parsed.videoTitle || 'Dự án video'), videoUrl: String(parsed.videoUrl || ''),
     videoFileName: String(parsed.videoFileName || 'video_bai_giang.mp4'), videoDuration: Number(parsed.videoDuration) || 0,
     subject: String(parsed.subject || 'Tổng hợp'), grade: String(parsed.grade || 'THPT'), lessonMaterial: parsed.lessonMaterial || null,
